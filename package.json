@@ -3,14 +3,31 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "db:start": "\"C:\\Program Files\\PostgreSQL\\18\\bin\\pg_ctl.exe\" -D .pgdata -o \"-p 5433\" -l .pgdata\\logfile start",
+    "db:stop": "\"C:\\Program Files\\PostgreSQL\\18\\bin\\pg_ctl.exe\" -D .pgdata stop",
+    "db:status": "\"C:\\Program Files\\PostgreSQL\\18\\bin\\pg_ctl.exe\" -D .pgdata status",
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "payload": "payload",
+    "generate:importmap": "payload generate:importmap --disable-transpile",
+    "generate:types": "payload generate:types --disable-transpile",
+    "migrate": "payload migrate --disable-transpile",
+    "migrate:create": "payload migrate:create --disable-transpile",
+    "seed": "payload seed --disable-transpile"
   },
   "dependencies": {
+    "@payloadcms/db-postgres": "^3.83.0",
+    "@payloadcms/live-preview-react": "^3.83.0",
+    "@payloadcms/next": "^3.83.0",
+    "@payloadcms/richtext-lexical": "^3.83.0",
+    "@payloadcms/ui": "^3.83.0",
+    "graphql": "^16.13.2",
     "next": "16.2.4",
+    "payload": "^3.83.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
