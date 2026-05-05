@@ -279,7 +279,7 @@ export interface Page {
         | {
             title?: string | null;
             subtitle?: string | null;
-            columns: '1' | '2' | '3';
+            columns: '1' | '2' | '3' | '4' | '5' | '6';
             column1?:
               | (
                   | {
@@ -467,6 +467,285 @@ export interface Page {
                 )[]
               | null;
             column3?:
+              | (
+                  | {
+                      heading: string;
+                      subtitle?: string | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'hero';
+                    }
+                  | {
+                      image: number | Media;
+                      href?: string | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'banner';
+                    }
+                  | {
+                      title: string;
+                      text?: string | null;
+                      buttonLabel?: string | null;
+                      buttonUrl?: string | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'cta';
+                    }
+                  | {
+                      slides?:
+                        | {
+                            image: number | Media;
+                            href?: string | null;
+                            id?: string | null;
+                          }[]
+                        | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'slider';
+                    }
+                  | {
+                      body: {
+                        root: {
+                          type: string;
+                          children: {
+                            type: any;
+                            version: number;
+                            [k: string]: unknown;
+                          }[];
+                          direction: ('ltr' | 'rtl') | null;
+                          format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                          indent: number;
+                          version: number;
+                        };
+                        [k: string]: unknown;
+                      };
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'content';
+                    }
+                  | {
+                      media: number | Media;
+                      caption?: string | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'image';
+                    }
+                  | {
+                      title: string;
+                      intro?: string | null;
+                      privacyHref?: string | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'formTabs';
+                    }
+                  | {
+                      text: string;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'heading';
+                    }
+                  | {
+                      sectionTitle: string;
+                      items?:
+                        | {
+                            title: string;
+                            file: number | Media;
+                            id?: string | null;
+                          }[]
+                        | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'fileList';
+                    }
+                )[]
+              | null;
+            column4?:
+              | (
+                  | {
+                      heading: string;
+                      subtitle?: string | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'hero';
+                    }
+                  | {
+                      image: number | Media;
+                      href?: string | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'banner';
+                    }
+                  | {
+                      title: string;
+                      text?: string | null;
+                      buttonLabel?: string | null;
+                      buttonUrl?: string | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'cta';
+                    }
+                  | {
+                      slides?:
+                        | {
+                            image: number | Media;
+                            href?: string | null;
+                            id?: string | null;
+                          }[]
+                        | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'slider';
+                    }
+                  | {
+                      body: {
+                        root: {
+                          type: string;
+                          children: {
+                            type: any;
+                            version: number;
+                            [k: string]: unknown;
+                          }[];
+                          direction: ('ltr' | 'rtl') | null;
+                          format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                          indent: number;
+                          version: number;
+                        };
+                        [k: string]: unknown;
+                      };
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'content';
+                    }
+                  | {
+                      media: number | Media;
+                      caption?: string | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'image';
+                    }
+                  | {
+                      title: string;
+                      intro?: string | null;
+                      privacyHref?: string | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'formTabs';
+                    }
+                  | {
+                      text: string;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'heading';
+                    }
+                  | {
+                      sectionTitle: string;
+                      items?:
+                        | {
+                            title: string;
+                            file: number | Media;
+                            id?: string | null;
+                          }[]
+                        | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'fileList';
+                    }
+                )[]
+              | null;
+            column5?:
+              | (
+                  | {
+                      heading: string;
+                      subtitle?: string | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'hero';
+                    }
+                  | {
+                      image: number | Media;
+                      href?: string | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'banner';
+                    }
+                  | {
+                      title: string;
+                      text?: string | null;
+                      buttonLabel?: string | null;
+                      buttonUrl?: string | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'cta';
+                    }
+                  | {
+                      slides?:
+                        | {
+                            image: number | Media;
+                            href?: string | null;
+                            id?: string | null;
+                          }[]
+                        | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'slider';
+                    }
+                  | {
+                      body: {
+                        root: {
+                          type: string;
+                          children: {
+                            type: any;
+                            version: number;
+                            [k: string]: unknown;
+                          }[];
+                          direction: ('ltr' | 'rtl') | null;
+                          format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                          indent: number;
+                          version: number;
+                        };
+                        [k: string]: unknown;
+                      };
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'content';
+                    }
+                  | {
+                      media: number | Media;
+                      caption?: string | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'image';
+                    }
+                  | {
+                      title: string;
+                      intro?: string | null;
+                      privacyHref?: string | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'formTabs';
+                    }
+                  | {
+                      text: string;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'heading';
+                    }
+                  | {
+                      sectionTitle: string;
+                      items?:
+                        | {
+                            title: string;
+                            file: number | Media;
+                            id?: string | null;
+                          }[]
+                        | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'fileList';
+                    }
+                )[]
+              | null;
+            column6?:
               | (
                   | {
                       heading: string;
@@ -1005,6 +1284,270 @@ export interface PagesSelect<T extends boolean = true> {
                         };
                   };
               column3?:
+                | T
+                | {
+                    hero?:
+                      | T
+                      | {
+                          heading?: T;
+                          subtitle?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    banner?:
+                      | T
+                      | {
+                          image?: T;
+                          href?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    cta?:
+                      | T
+                      | {
+                          title?: T;
+                          text?: T;
+                          buttonLabel?: T;
+                          buttonUrl?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    slider?:
+                      | T
+                      | {
+                          slides?:
+                            | T
+                            | {
+                                image?: T;
+                                href?: T;
+                                id?: T;
+                              };
+                          id?: T;
+                          blockName?: T;
+                        };
+                    content?:
+                      | T
+                      | {
+                          body?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    image?:
+                      | T
+                      | {
+                          media?: T;
+                          caption?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    formTabs?:
+                      | T
+                      | {
+                          title?: T;
+                          intro?: T;
+                          privacyHref?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    heading?:
+                      | T
+                      | {
+                          text?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    fileList?:
+                      | T
+                      | {
+                          sectionTitle?: T;
+                          items?:
+                            | T
+                            | {
+                                title?: T;
+                                file?: T;
+                                id?: T;
+                              };
+                          id?: T;
+                          blockName?: T;
+                        };
+                  };
+              column4?:
+                | T
+                | {
+                    hero?:
+                      | T
+                      | {
+                          heading?: T;
+                          subtitle?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    banner?:
+                      | T
+                      | {
+                          image?: T;
+                          href?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    cta?:
+                      | T
+                      | {
+                          title?: T;
+                          text?: T;
+                          buttonLabel?: T;
+                          buttonUrl?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    slider?:
+                      | T
+                      | {
+                          slides?:
+                            | T
+                            | {
+                                image?: T;
+                                href?: T;
+                                id?: T;
+                              };
+                          id?: T;
+                          blockName?: T;
+                        };
+                    content?:
+                      | T
+                      | {
+                          body?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    image?:
+                      | T
+                      | {
+                          media?: T;
+                          caption?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    formTabs?:
+                      | T
+                      | {
+                          title?: T;
+                          intro?: T;
+                          privacyHref?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    heading?:
+                      | T
+                      | {
+                          text?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    fileList?:
+                      | T
+                      | {
+                          sectionTitle?: T;
+                          items?:
+                            | T
+                            | {
+                                title?: T;
+                                file?: T;
+                                id?: T;
+                              };
+                          id?: T;
+                          blockName?: T;
+                        };
+                  };
+              column5?:
+                | T
+                | {
+                    hero?:
+                      | T
+                      | {
+                          heading?: T;
+                          subtitle?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    banner?:
+                      | T
+                      | {
+                          image?: T;
+                          href?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    cta?:
+                      | T
+                      | {
+                          title?: T;
+                          text?: T;
+                          buttonLabel?: T;
+                          buttonUrl?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    slider?:
+                      | T
+                      | {
+                          slides?:
+                            | T
+                            | {
+                                image?: T;
+                                href?: T;
+                                id?: T;
+                              };
+                          id?: T;
+                          blockName?: T;
+                        };
+                    content?:
+                      | T
+                      | {
+                          body?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    image?:
+                      | T
+                      | {
+                          media?: T;
+                          caption?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    formTabs?:
+                      | T
+                      | {
+                          title?: T;
+                          intro?: T;
+                          privacyHref?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    heading?:
+                      | T
+                      | {
+                          text?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    fileList?:
+                      | T
+                      | {
+                          sectionTitle?: T;
+                          items?:
+                            | T
+                            | {
+                                title?: T;
+                                file?: T;
+                                id?: T;
+                              };
+                          id?: T;
+                          blockName?: T;
+                        };
+                  };
+              column6?:
                 | T
                 | {
                     hero?:

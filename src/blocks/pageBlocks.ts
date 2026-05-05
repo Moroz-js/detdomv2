@@ -119,7 +119,7 @@ const contentColumnBlocks: Block[] = [
 
 export const ContainerBlock: Block = {
   slug: 'container',
-  labels: { singular: 'Контейнер (1-2-3 колонки)', plural: 'Контейнеры (1-2-3 колонки)' },
+  labels: { singular: 'Контейнер (до 6 колонок)', plural: 'Контейнеры (до 6 колонок)' },
   fields: [
     { name: 'title', type: 'text', label: 'Заголовок секции' },
     { name: 'subtitle', type: 'textarea', label: 'Подзаголовок секции' },
@@ -132,6 +132,9 @@ export const ContainerBlock: Block = {
         { label: '1 колонка', value: '1' },
         { label: '2 колонки', value: '2' },
         { label: '3 колонки', value: '3' },
+        { label: '4 колонки', value: '4' },
+        { label: '5 колонок', value: '5' },
+        { label: '6 колонок', value: '6' },
       ],
       required: true,
     },
@@ -156,7 +159,36 @@ export const ContainerBlock: Block = {
       label: 'Колонка 3',
       blocks: contentColumnBlocks,
       admin: {
-        condition: (_, siblingData) => siblingData?.columns === '3',
+        condition: (_, siblingData) =>
+          ['3', '4', '5', '6'].includes(String(siblingData?.columns ?? '')),
+      },
+    },
+    {
+      name: 'column4',
+      type: 'blocks',
+      label: 'Колонка 4',
+      blocks: contentColumnBlocks,
+      admin: {
+        condition: (_, siblingData) =>
+          ['4', '5', '6'].includes(String(siblingData?.columns ?? '')),
+      },
+    },
+    {
+      name: 'column5',
+      type: 'blocks',
+      label: 'Колонка 5',
+      blocks: contentColumnBlocks,
+      admin: {
+        condition: (_, siblingData) => ['5', '6'].includes(String(siblingData?.columns ?? '')),
+      },
+    },
+    {
+      name: 'column6',
+      type: 'blocks',
+      label: 'Колонка 6',
+      blocks: contentColumnBlocks,
+      admin: {
+        condition: (_, siblingData) => String(siblingData?.columns ?? '') === '6',
       },
     },
   ],

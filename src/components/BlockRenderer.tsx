@@ -30,9 +30,20 @@ function normalizeBlocks(v: unknown): BlockRendererBlock[] {
 }
 
 function containerColumnsClass(columns: string) {
-  if (columns === '1') return 'grid grid-cols-1 gap-6'
-  if (columns === '3') return 'grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'
-  return 'grid grid-cols-1 gap-6 md:grid-cols-2'
+  switch (columns) {
+    case '1':
+      return 'grid grid-cols-1 gap-6'
+    case '3':
+      return 'grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3'
+    case '4':
+      return 'grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4'
+    case '5':
+      return 'grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5'
+    case '6':
+      return 'grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6'
+    default:
+      return 'grid grid-cols-1 gap-6 md:grid-cols-2'
+  }
 }
 
 function renderBlock(block: BlockRendererBlock, key: string): React.ReactNode {
@@ -281,10 +292,16 @@ function renderBlock(block: BlockRendererBlock, key: string): React.ReactNode {
     }
     case 'container': {
       const columns = String(block.columns ?? '2')
+      const n = Math.min(6, Math.max(1, parseInt(columns, 10) || 2))
       const column1 = normalizeBlocks(block.column1)
-      const column2 = columns === '1' ? [] : normalizeBlocks(block.column2)
-      const column3 = columns === '3' ? normalizeBlocks(block.column3) : []
-      const columnBlocks = [column1, column2, column3].filter((list) => list.length > 0)
+      const column2 = n >= 2 ? normalizeBlocks(block.column2) : []
+      const column3 = n >= 3 ? normalizeBlocks(block.column3) : []
+      const column4 = n >= 4 ? normalizeBlocks(block.column4) : []
+      const column5 = n >= 5 ? normalizeBlocks(block.column5) : []
+      const column6 = n >= 6 ? normalizeBlocks(block.column6) : []
+      const columnBlocks = [column1, column2, column3, column4, column5, column6].filter(
+        (list) => list.length > 0,
+      )
 
       if (!columnBlocks.length) return null
 
@@ -298,7 +315,7 @@ function renderBlock(block: BlockRendererBlock, key: string): React.ReactNode {
               {block.subtitle ? <p className="text-stone-600">{String(block.subtitle)}</p> : null}
             </div>
           ) : null}
-          <div className={containerColumnsClass(columns)}>
+          <div className={containerColumnsClass(String(n))}>
             {columnBlocks.map((blocksInColumn, idx) => (
               <div key={`${key}-col-${idx}`} className="min-w-0 space-y-8 break-words [overflow-wrap:anywhere]">
                 {blocksInColumn.map((innerBlock) => {
