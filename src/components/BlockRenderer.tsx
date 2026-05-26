@@ -92,14 +92,12 @@ async function fetchHomeSliderSlides() {
 
 async function fetchAchievements(year?: number | null) {
   const payload = await getPayload({ config: configPromise })
-  const where: Record<string, unknown> = {}
-  if (typeof year === 'number') where.year = { equals: year }
   const result = await payload.find({
     collection: 'achievements',
     depth: 1,
     limit: 1000,
     sort: 'order',
-    where: Object.keys(where).length ? where : undefined,
+    ...(typeof year === 'number' ? { where: { year: { equals: year } } } : {}),
   })
   return result.docs.filter(isRecord)
 }
@@ -387,8 +385,9 @@ async function renderBlock(
         const year = typeof yearRaw === 'number' ? yearRaw : null
         const docs = await fetchAchievements(year)
         images = docs.map((doc, i) => {
-          const { src, alt } = resolveImageSrc(doc, 'image')
-          const title = pickStr(doc.title) || String((doc.order as number | undefined) ?? i + 1)
+          const row = doc as unknown as Record<string, unknown>
+          const { src, alt } = resolveImageSrc(row, 'image')
+          const title = pickStr(row.title) || String((row.order as number | undefined) ?? i + 1)
           return { src, alt: alt || title, caption: title }
         })
       } else {
