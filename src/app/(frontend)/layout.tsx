@@ -24,10 +24,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Детский дом',
   description: 'Официальный сайт',
-  icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.ico',
-  },
 }
 
 export default async function FrontendLayout({ children }: { children: React.ReactNode }) {
