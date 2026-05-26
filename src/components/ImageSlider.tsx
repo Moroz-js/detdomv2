@@ -67,14 +67,27 @@ const imageSizes = {
   },
 } as const
 
+const MD_MEDIA = '(min-width: 768px)'
+
 export function ImageSlider({ slides, variant = 'card', slidesPerView = 3 }: ImageSliderProps) {
-  const perView = slidesPerView === 3 ? 3 : 1
+  const [isWide, setIsWide] = useState(false)
   const [page, setPage] = useState(0)
   const [zoomIndex, setZoomIndex] = useState(0)
   const [zoomOpen, setZoomOpen] = useState(false)
   const count = slides.length
 
+  /** На телефоне всегда 1; тройной режим — с md и шире */
+  const perView = slidesPerView === 1 ? 1 : isWide ? 3 : 1
+
   const pageCount = Math.max(1, Math.ceil(count / perView))
+
+  useEffect(() => {
+    const mq = window.matchMedia(MD_MEDIA)
+    const update = () => setIsWide(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
 
   useEffect(() => {
     setPage(0)

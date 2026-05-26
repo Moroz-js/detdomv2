@@ -125,8 +125,8 @@ function headingTextFromContentBlock(block: BlockRendererBlock): string | null {
 type RenderBlockOpts = {
   hideFileListTitle?: boolean
   pageSlug?: string
-  /** 3 — одноколоночный контейнер или страница; 1 — 2+ колонки */
-  slidesPerView?: 1 | 3
+  /** Число колонок контейнера (0 — вне контейнера, на всю ширину) */
+  containerColumns?: number
 }
 
 function parseSliderSlides(items: unknown[]): SliderSlide[] {
