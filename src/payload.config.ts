@@ -5,6 +5,8 @@ import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
+import { Achievements } from './collections/Achievements.ts'
+import { FormSubmissions } from './collections/FormSubmissions.ts'
 import { Media } from './collections/Media.ts'
 import { News } from './collections/News.ts'
 import { Pages } from './collections/Pages.ts'
@@ -12,6 +14,7 @@ import { Users } from './collections/Users.ts'
 import { FooterContent } from './globals/FooterContent.ts'
 import { FooterNav } from './globals/FooterNav.ts'
 import { HeaderNav } from './globals/HeaderNav.ts'
+import { HomeSlider } from './globals/HomeSlider.ts'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -19,8 +22,16 @@ const dirname = path.dirname(filename)
 export default buildConfig({
   bin: [
     {
-      key: 'seed',
-      scriptPath: path.resolve(dirname, 'scripts/seed-bin.ts'),
+      key: 'purge-content',
+      scriptPath: path.resolve(dirname, 'scripts/purge-content-bin.ts'),
+    },
+    {
+      key: 'import-content',
+      scriptPath: path.resolve(dirname, 'scripts/import-content-bin.ts'),
+    },
+    {
+      key: 'patch-security-page',
+      scriptPath: path.resolve(dirname, 'scripts/patch-security-page-bin.ts'),
     },
   ],
   admin: {
@@ -36,8 +47,8 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Users, Media, Pages, News],
-  globals: [HeaderNav, FooterNav, FooterContent],
+  collections: [Users, Media, Pages, News, Achievements, FormSubmissions],
+  globals: [HeaderNav, FooterNav, FooterContent, HomeSlider],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

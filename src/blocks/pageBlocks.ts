@@ -6,6 +6,19 @@ export const HeroBlock: Block = {
   fields: [
     { name: 'heading', type: 'text', required: true, label: 'Заголовок (H1)' },
     { name: 'subtitle', type: 'textarea', label: 'Подзаголовок' },
+    {
+      name: 'image',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Изображение (upload)',
+      admin: { description: 'Если задан — используется upload; иначе берётся URL ниже.' },
+    },
+    {
+      name: 'imageUrl',
+      type: 'text',
+      label: 'Изображение (URL)',
+      admin: { description: 'Прямой URL (например, на detskiydomuss.ru).' },
+    },
   ],
 }
 
@@ -13,7 +26,19 @@ export const BannerBlock: Block = {
   slug: 'banner',
   labels: { singular: 'Баннер', plural: 'Баннеры' },
   fields: [
-    { name: 'image', type: 'upload', relationTo: 'media', required: true, label: 'Изображение' },
+    {
+      name: 'image',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Изображение (upload)',
+    },
+    {
+      name: 'imageUrl',
+      type: 'text',
+      label: 'Изображение (URL)',
+      admin: { description: 'Альтернатива upload — прямой URL.' },
+    },
+    { name: 'alt', type: 'text', label: 'Alt-текст' },
     { name: 'href', type: 'text', label: 'Ссылка' },
   ],
 }
@@ -38,7 +63,9 @@ export const SliderBlock: Block = {
       type: 'array',
       label: 'Слайды',
       fields: [
-        { name: 'image', type: 'upload', relationTo: 'media', required: true },
+        { name: 'image', type: 'upload', relationTo: 'media', label: 'Изображение (upload)' },
+        { name: 'imageUrl', type: 'text', label: 'Изображение (URL)' },
+        { name: 'alt', type: 'text', label: 'Alt-текст' },
         { name: 'href', type: 'text', label: 'Ссылка (опционально)' },
       ],
     },
@@ -62,7 +89,9 @@ export const ImageBlock: Block = {
   slug: 'image',
   labels: { singular: 'Изображение', plural: 'Изображения' },
   fields: [
-    { name: 'media', type: 'upload', relationTo: 'media', required: true },
+    { name: 'media', type: 'upload', relationTo: 'media', label: 'Изображение (upload)' },
+    { name: 'imageUrl', type: 'text', label: 'Изображение (URL)' },
+    { name: 'alt', type: 'text', label: 'Alt-текст' },
     { name: 'caption', type: 'text', label: 'Подпись' },
   ],
 }
@@ -73,6 +102,18 @@ export const FormTabsBlock: Block = {
   fields: [
     { name: 'title', type: 'text', required: true, label: 'Заголовок блока' },
     { name: 'intro', type: 'textarea', label: 'Вводный текст' },
+    {
+      name: 'tabs',
+      type: 'select',
+      hasMany: true,
+      label: 'Доступные вкладки',
+      defaultValue: ['help_request', 'want_to_help', 'feedback'],
+      options: [
+        { label: 'Нужна помощь', value: 'help_request' },
+        { label: 'Хочу помочь', value: 'want_to_help' },
+        { label: 'Обратная связь', value: 'feedback' },
+      ],
+    },
     {
       name: 'privacyHref',
       type: 'text',
@@ -85,8 +126,29 @@ export const FormTabsBlock: Block = {
 export const HeadingBlock: Block = {
   slug: 'heading',
   labels: { singular: 'Подзаголовок H2', plural: 'Подзаголовки' },
-  fields: [{ name: 'text', type: 'text', required: true, label: 'Текст' }],
+  fields: [
+    { name: 'text', type: 'text', required: true, label: 'Текст' },
+    {
+      name: 'anchorId',
+      type: 'text',
+      label: 'Якорь (id)',
+      admin: {
+        description:
+          'Без решётки, латиницей. Используется для ссылок вида /info#main, /socials#living и т.п.',
+      },
+    },
+  ],
 }
+
+const FILE_EXT_OPTIONS = [
+  { label: 'PDF', value: 'pdf' },
+  { label: 'DOCX', value: 'docx' },
+  { label: 'DOC', value: 'doc' },
+  { label: 'XLSX', value: 'xlsx' },
+  { label: 'XLS', value: 'xls' },
+  { label: 'ZIP', value: 'zip' },
+  { label: 'Другое', value: 'other' },
+]
 
 export const FileListBlock: Block = {
   slug: 'fileList',
@@ -99,8 +161,92 @@ export const FileListBlock: Block = {
       label: 'Файлы',
       fields: [
         { name: 'title', type: 'text', required: true, label: 'Название' },
-        { name: 'file', type: 'upload', relationTo: 'media', required: true, label: 'Файл' },
+        { name: 'file', type: 'upload', relationTo: 'media', label: 'Файл (upload)' },
+        {
+          name: 'fileUrl',
+          type: 'text',
+          label: 'Файл (URL)',
+          admin: { description: 'Альтернатива upload — прямой URL.' },
+        },
+        {
+          name: 'fileExt',
+          type: 'select',
+          label: 'Тип файла',
+          defaultValue: 'pdf',
+          options: FILE_EXT_OPTIONS,
+        },
       ],
+    },
+  ],
+}
+
+export const EmbedBlock: Block = {
+  slug: 'embed',
+  labels: { singular: 'HTML-вставка', plural: 'HTML-вставки' },
+  fields: [
+    { name: 'title', type: 'text', label: 'Внутреннее название (для админки)' },
+    {
+      name: 'html',
+      type: 'textarea',
+      required: true,
+      label: 'HTML-код виджета',
+      admin: {
+        description:
+          'Вставится «как есть». Используется для виджетов Госуслуг, форм CF7 и т.п.',
+      },
+    },
+  ],
+}
+
+export const GalleryBlock: Block = {
+  slug: 'gallery',
+  labels: { singular: 'Галерея (достижения)', plural: 'Галереи' },
+  fields: [
+    { name: 'title', type: 'text', label: 'Заголовок (опц.)' },
+    {
+      name: 'source',
+      type: 'select',
+      label: 'Источник',
+      required: true,
+      defaultValue: 'achievements',
+      options: [
+        { label: 'Коллекция «Достижения»', value: 'achievements' },
+        { label: 'Свой список изображений', value: 'custom' },
+      ],
+    },
+    {
+      name: 'year',
+      type: 'number',
+      label: 'Фильтр по году (для коллекции)',
+      admin: { condition: (_, sibling) => sibling?.source === 'achievements' },
+    },
+    {
+      name: 'items',
+      type: 'array',
+      label: 'Свои изображения',
+      admin: { condition: (_, sibling) => sibling?.source === 'custom' },
+      fields: [
+        { name: 'image', type: 'upload', relationTo: 'media', label: 'Изображение (upload)' },
+        { name: 'imageUrl', type: 'text', label: 'Изображение (URL)' },
+        { name: 'alt', type: 'text', label: 'Alt-текст' },
+        { name: 'caption', type: 'text', label: 'Подпись' },
+      ],
+    },
+  ],
+}
+
+export const HomeSliderBlock: Block = {
+  slug: 'homeSlider',
+  labels: { singular: 'Главный слайдер', plural: 'Главные слайдеры' },
+  fields: [
+    {
+      name: 'note',
+      type: 'text',
+      label: 'Заметка (опц.)',
+      admin: {
+        description:
+          'Содержимое слайдера редактируется в глобале «Главный слайдер». Здесь — место для размещения.',
+      },
     },
   ],
 }
@@ -115,6 +261,7 @@ const contentColumnBlocks: Block[] = [
   FormTabsBlock,
   HeadingBlock,
   FileListBlock,
+  EmbedBlock,
 ]
 
 export const ContainerBlock: Block = {
@@ -204,5 +351,8 @@ export const pageBlocks: Block[] = [
   FormTabsBlock,
   HeadingBlock,
   FileListBlock,
+  EmbedBlock,
+  GalleryBlock,
+  HomeSliderBlock,
   ContainerBlock,
 ]

@@ -2,7 +2,10 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import type { SerializedEditorState } from 'lexical'
+import { getPayload } from 'payload'
 
+import configPromise from '@payload-config'
+import { FormTabsBlock, type FormType } from '@/components/FormTabsBlock'
 import { mediaSrc } from '@/lib/media'
 import { cn } from '@/lib/utils'
 
@@ -29,6 +32,40 @@ function normalizeBlocks(v: unknown): BlockRendererBlock[] {
   return v.filter((item): item is BlockRendererBlock => isRecord(item))
 }
 
+function pickStr(v: unknown): string | null {
+  if (typeof v !== 'string') return null
+  const trimmed = v.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+/**
+ * Достаёт src изображения по приоритету: imageUrl (text) > upload-поле (MediaRef).
+ */
+function resolveImageSrc(block: Record<string, unknown>, uploadField: string, urlField = 'imageUrl'): {
+  src: string
+  alt: string
+} {
+  const directUrl = pickStr(block[urlField])
+  if (directUrl) {
+    return {
+      src: mediaSrc(directUrl),
+      alt: pickStr(block.alt) || pickStr(block.caption) || '',
+    }
+  }
+  const upload = block[uploadField] as MediaRef
+  return {
+    src: mediaSrc(upload?.url),
+    alt: pickStr(upload?.alt) || pickStr(upload?.filename) || pickStr(block.alt) || '',
+  }
+}
+
+function resolveFileHref(item: Record<string, unknown>): string {
+  const direct = pickStr(item.fileUrl)
+  if (direct) return mediaSrc(direct)
+  const file = item.file as MediaRef
+  return mediaSrc(file?.url)
+}
+
 function containerColumnsClass(columns: string) {
   switch (columns) {
     case '1':
@@ -46,11 +83,71 @@ function containerColumnsClass(columns: string) {
   }
 }
 
-function renderBlock(block: BlockRendererBlock, key: string): React.ReactNode {
+async function fetchHomeSliderSlides() {
+  const payload = await getPayload({ config: configPromise })
+  const global = await payload.findGlobal({ slug: 'homeSlider', depth: 1 })
+  const slides = Array.isArray(global?.slides) ? global.slides : []
+  return slides.filter(isRecord)
+}
+
+async function fetchAchievements(year?: number | null) {
+  const payload = await getPayload({ config: configPromise })
+  const where: Record<string, unknown> = {}
+  if (typeof year === 'number') where.year = { equals: year }
+  const result = await payload.find({
+    collection: 'achievements',
+    depth: 1,
+    limit: 1000,
+    sort: 'order',
+    where: Object.keys(where).length ? where : undefined,
+  })
+  return result.docs.filter(isRecord)
+}
+
+function headingTextFromContentBlock(block: BlockRendererBlock): string | null {
+  if (block.blockType !== 'content') return null
+  const body = block.body
+  if (!isRecord(body)) return null
+  const root = body.root
+  if (!isRecord(root)) return null
+  const children = root.children
+  if (!Array.isArray(children) || children.length !== 1) return null
+  const node = children[0]
+  if (!isRecord(node) || node.type !== 'heading') return null
+  const tag = node.tag
+  if (tag !== 'h2' && tag !== 'h3') return null
+  const nodeChildren = node.children
+  if (!Array.isArray(nodeChildren) || nodeChildren.length !== 1) return null
+  const textNode = nodeChildren[0]
+  if (!isRecord(textNode) || textNode.type !== 'text') return null
+  return pickStr(textNode.text)
+}
+
+type RenderBlockOpts = {
+  hideFileListTitle?: boolean
+  pageSlug?: string
+}
+
+function parseFormTabs(block: BlockRendererBlock): FormType[] {
+  const raw = block.tabs
+  if (!Array.isArray(raw)) return ['help_request', 'want_to_help', 'feedback']
+  const tabs: FormType[] = []
+  for (const t of raw) {
+    if (t === 'help_request' || t === 'want_to_help' || t === 'feedback') tabs.push(t)
+  }
+  return tabs.length ? tabs : ['feedback']
+}
+
+async function renderBlock(
+  block: BlockRendererBlock,
+  key: string,
+  opts?: RenderBlockOpts,
+): Promise<React.ReactNode> {
   switch (block.blockType) {
-    case 'hero':
+    case 'hero': {
+      const { src, alt } = resolveImageSrc(block, 'image')
       return (
-        <section key={key} className="space-y-3">
+        <section key={key} className="space-y-4">
           <h1 className="text-3xl font-semibold tracking-tight text-stone-900 md:text-4xl">
             {String(block.heading ?? '')}
           </h1>
@@ -59,23 +156,32 @@ function renderBlock(block: BlockRendererBlock, key: string): React.ReactNode {
               {String(block.subtitle)}
             </p>
           ) : null}
+          {src ? (
+            <Image
+              alt={alt || String(block.heading ?? '')}
+              className="h-auto w-full max-w-3xl rounded-xl border border-zinc-200 object-cover shadow-sm"
+              height={420}
+              src={src}
+              unoptimized
+              width={1280}
+            />
+          ) : null}
         </section>
       )
+    }
     case 'banner': {
-      const img = block.image as MediaRef
-      const href = block.href ? String(block.href) : null
-      const src = mediaSrc(img?.url)
-      const inner =
-        src ? (
-          <Image
-            alt={img?.alt || img?.filename || 'Баннер'}
-            className="h-auto w-full max-w-2xl rounded-lg border border-zinc-200 object-contain"
-            height={200}
-            src={src}
-            unoptimized
-            width={800}
-          />
-        ) : null
+      const { src, alt } = resolveImageSrc(block, 'image')
+      const href = pickStr(block.href)
+      const inner = src ? (
+        <Image
+          alt={alt || 'Баннер'}
+          className="h-auto w-full max-w-2xl rounded-lg border border-zinc-200 object-contain"
+          height={200}
+          src={src}
+          unoptimized
+          width={800}
+        />
+      ) : null
       return (
         <section key={key} className="flex justify-center">
           {href ? (
@@ -92,18 +198,16 @@ function renderBlock(block: BlockRendererBlock, key: string): React.ReactNode {
       return (
         <section
           key={key}
-          className="rounded-xl border border-stone-200/90 bg-white/95 p-8 shadow-[0_2px_16px_-4px_rgba(28,25,23,0.08)] backdrop-blur-sm md:flex md:items-center md:justify-between md:gap-8"
+          className="flex h-full flex-col rounded-xl border border-stone-200/90 bg-white/95 p-6 shadow-[0_2px_16px_-4px_rgba(28,25,23,0.08)] backdrop-blur-sm"
         >
           <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-stone-900">{String(block.title ?? '')}</h2>
-            {block.text ? (
-              <p className="text-stone-600">{String(block.text)}</p>
-            ) : null}
+            <h3 className="text-lg font-semibold text-stone-900">{String(block.title ?? '')}</h3>
+            {block.text ? <p className="text-sm leading-relaxed text-stone-600">{String(block.text)}</p> : null}
           </div>
           {block.buttonUrl && block.buttonLabel ? (
             <Link
               className={cn(
-                'mt-4 inline-flex h-10 shrink-0 items-center justify-center rounded-md bg-stone-900 px-5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-stone-800 md:mt-0',
+                'mt-4 inline-flex h-10 w-full items-center justify-center rounded-md bg-stone-900 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-stone-800',
               )}
               href={String(block.buttonUrl)}
             >
@@ -119,13 +223,12 @@ function renderBlock(block: BlockRendererBlock, key: string): React.ReactNode {
           <div className="flex gap-4 overflow-x-auto pb-2">
             {slides.map((slide, i) => {
               if (!isRecord(slide)) return null
-              const img = slide.image as MediaRef
-              const src = mediaSrc(img?.url)
-              const href = slide.href ? String(slide.href) : null
+              const { src, alt } = resolveImageSrc(slide, 'image')
+              const href = pickStr(slide.href)
               const slideKey = `${key}-slide-${i}`
               const card = src ? (
                 <Image
-                  alt={img?.alt || `Слайд ${i + 1}`}
+                  alt={alt || `Слайд ${i + 1}`}
                   className="h-48 w-72 rounded-lg border border-zinc-200 object-cover shadow-sm"
                   height={192}
                   src={src}
@@ -162,13 +265,12 @@ function renderBlock(block: BlockRendererBlock, key: string): React.ReactNode {
       )
     }
     case 'image': {
-      const img = block.media as MediaRef
-      const src = mediaSrc(img?.url)
+      const { src, alt } = resolveImageSrc(block, 'media')
       return (
         <figure key={key} className="space-y-2">
           {src ? (
             <Image
-              alt={img?.alt || 'Изображение'}
+              alt={alt || pickStr(block.caption) || 'Изображение'}
               className="max-h-[480px] w-auto max-w-full rounded-lg border border-zinc-200 object-contain shadow-sm"
               height={480}
               src={src}
@@ -184,40 +286,40 @@ function renderBlock(block: BlockRendererBlock, key: string): React.ReactNode {
     }
     case 'formTabs':
       return (
-        <section
+        <FormTabsBlock
           key={key}
-          className="rounded-xl border border-dashed border-stone-300 bg-[#f6f5f1]/90 p-8 text-center text-stone-600"
-        >
-          <h2 className="mb-2 text-lg font-semibold text-stone-900">
-            {String(block.title ?? '')}
-          </h2>
-          {block.intro ? <p className="mb-4 text-left text-sm">{String(block.intro)}</p> : null}
-          <p className="text-sm">
-            Отправка форм (SMTP) — следующий этап по плану. Ссылка на политику:{' '}
-            <Link className="font-medium text-stone-900 underline" href={String(block.privacyHref || '/privacy')}>
-              {String(block.privacyHref || '/privacy')}
-            </Link>
-          </p>
-        </section>
+          intro={block.intro ? String(block.intro) : null}
+          pageSlug={opts?.pageSlug}
+          privacyHref={String(block.privacyHref || '/privacy')}
+          tabs={parseFormTabs(block)}
+          title={String(block.title ?? 'Свяжитесь с нами')}
+        />
       )
-    case 'heading':
+    case 'heading': {
+      const anchorId = pickStr(block.anchorId)
       return (
-        <h2 key={key} className="text-2xl font-semibold tracking-tight text-stone-900">
+        <h2
+          key={key}
+          {...(anchorId ? { id: anchorId } : {})}
+          className="scroll-mt-24 text-2xl font-semibold tracking-tight text-stone-900"
+        >
           {String(block.text ?? '')}
         </h2>
       )
+    }
     case 'fileList': {
       const items = Array.isArray(block.items) ? block.items : []
+      const sectionTitle = pickStr(block.sectionTitle)
       return (
         <section key={key} className="space-y-4">
-          <h3 className="text-xl font-semibold text-stone-900">
-            {String(block.sectionTitle ?? '')}
-          </h3>
+          {sectionTitle && !opts?.hideFileListTitle ? (
+            <h3 className="text-xl font-semibold text-stone-900">{sectionTitle}</h3>
+          ) : null}
           <ul className="grid grid-cols-1 gap-3 lg:grid-cols-3">
             {items.map((item, i) => {
               if (!isRecord(item)) return null
-              const file = item.file as MediaRef
-              const href = mediaSrc(file?.url)
+              const href = resolveFileHref(item)
+              const ext = pickStr(item.fileExt)?.toUpperCase() || null
               return (
                 <li
                   key={`${key}-f-${i}`}
@@ -229,23 +331,10 @@ function renderBlock(block: BlockRendererBlock, key: string): React.ReactNode {
                       download
                       href={href}
                       rel="noopener noreferrer"
+                      target="_blank"
                     >
-                      <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-700 transition-colors group-hover:bg-stone-200">
-                        <svg
-                          aria-hidden="true"
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M3.75 8.25A2.25 2.25 0 0 1 6 6h4.28c.54 0 1.06.2 1.46.57l1.15 1.06c.4.37.92.57 1.46.57H18A2.25 2.25 0 0 1 20.25 10.5v6A2.25 2.25 0 0 1 18 18.75H6a2.25 2.25 0 0 1-2.25-2.25v-8.25Z"
-                            stroke="currentColor"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="1.5"
-                          />
-                        </svg>
+                      <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-[10px] font-bold tracking-wider text-stone-700 transition-colors group-hover:bg-stone-200">
+                        {ext ?? 'FILE'}
                       </span>
                       <span className="min-w-0 space-y-1">
                         <span className="block truncate text-sm font-semibold text-stone-900">
@@ -258,22 +347,8 @@ function renderBlock(block: BlockRendererBlock, key: string): React.ReactNode {
                     </a>
                   ) : (
                     <div className="flex items-start gap-3 p-4 opacity-80">
-                      <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-700">
-                        <svg
-                          aria-hidden="true"
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M3.75 8.25A2.25 2.25 0 0 1 6 6h4.28c.54 0 1.06.2 1.46.57l1.15 1.06c.4.37.92.57 1.46.57H18A2.25 2.25 0 0 1 20.25 10.5v6A2.25 2.25 0 0 1 18 18.75H6a2.25 2.25 0 0 1-2.25-2.25v-8.25Z"
-                            stroke="currentColor"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="1.5"
-                          />
-                        </svg>
+                      <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-[10px] font-bold tracking-wider text-stone-700">
+                        {ext ?? 'FILE'}
                       </span>
                       <span className="min-w-0 space-y-1">
                         <span className="block truncate text-sm font-semibold text-stone-900">
@@ -287,6 +362,108 @@ function renderBlock(block: BlockRendererBlock, key: string): React.ReactNode {
               )
             })}
           </ul>
+        </section>
+      )
+    }
+    case 'embed': {
+      const html = pickStr(block.html)
+      if (!html) return null
+      return (
+        <section
+          key={key}
+          className="overflow-hidden rounded-xl border border-stone-200 bg-white/95 p-2"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      )
+    }
+    case 'gallery': {
+      const source = pickStr(block.source) ?? 'achievements'
+      const title = pickStr(block.title)
+
+      let images: Array<{ src: string; alt: string; caption?: string | null }> = []
+
+      if (source === 'achievements') {
+        const yearRaw = block.year
+        const year = typeof yearRaw === 'number' ? yearRaw : null
+        const docs = await fetchAchievements(year)
+        images = docs.map((doc, i) => {
+          const { src, alt } = resolveImageSrc(doc, 'image')
+          const title = pickStr(doc.title) || String((doc.order as number | undefined) ?? i + 1)
+          return { src, alt: alt || title, caption: title }
+        })
+      } else {
+        const items = Array.isArray(block.items) ? block.items : []
+        images = items.filter(isRecord).map((item) => {
+          const { src, alt } = resolveImageSrc(item, 'image')
+          return { src, alt, caption: pickStr(item.caption) }
+        })
+      }
+
+      return (
+        <section key={key} className="space-y-4">
+          {title ? (
+            <h2 className="text-2xl font-semibold tracking-tight text-stone-900">{title}</h2>
+          ) : null}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {images.map((img, i) =>
+              img.src ? (
+                <figure
+                  key={`${key}-g-${i}`}
+                  className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm"
+                >
+                  <Image
+                    alt={img.alt || 'Изображение'}
+                    className="aspect-[3/4] w-full object-contain"
+                    height={400}
+                    src={img.src}
+                    unoptimized
+                    width={300}
+                  />
+                  {img.caption && source !== 'achievements' ? (
+                    <figcaption className="border-t border-stone-100 px-2 py-1 text-center text-xs text-stone-600">
+                      {img.caption}
+                    </figcaption>
+                  ) : null}
+                </figure>
+              ) : null,
+            )}
+          </div>
+        </section>
+      )
+    }
+    case 'homeSlider': {
+      const slides = await fetchHomeSliderSlides()
+      if (!slides.length) return null
+      return (
+        <section key={key} className="space-y-4">
+          <div className="flex gap-4 overflow-x-auto pb-2">
+            {slides.map((slide, i) => {
+              const { src, alt } = resolveImageSrc(slide, 'image')
+              const href = pickStr(slide.href)
+              const slideKey = `${key}-home-${i}`
+              const card = src ? (
+                <Image
+                  alt={alt || pickStr(slide.title) || `Слайд ${i + 1}`}
+                  className="h-64 w-[28rem] rounded-xl border border-zinc-200 object-cover shadow-sm"
+                  height={256}
+                  src={src}
+                  unoptimized
+                  width={448}
+                />
+              ) : null
+              return (
+                <div key={slideKey} className="shrink-0">
+                  {href ? (
+                    <Link className="block" href={href}>
+                      {card}
+                    </Link>
+                  ) : (
+                    card
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </section>
       )
     }
@@ -316,14 +493,23 @@ function renderBlock(block: BlockRendererBlock, key: string): React.ReactNode {
             </div>
           ) : null}
           <div className={containerColumnsClass(String(n))}>
-            {columnBlocks.map((blocksInColumn, idx) => (
-              <div key={`${key}-col-${idx}`} className="min-w-0 space-y-8 break-words [overflow-wrap:anywhere]">
-                {blocksInColumn.map((innerBlock) => {
-                  const innerKey = innerBlock.id ?? `${key}-col-${idx}-${JSON.stringify(innerBlock).slice(0, 32)}`
-                  return renderBlock(innerBlock, String(innerKey))
-                })}
-              </div>
-            ))}
+            {await Promise.all(
+              columnBlocks.map(async (blocksInColumn, idx) => (
+                <div
+                  key={`${key}-col-${idx}`}
+                  className="min-w-0 space-y-8 break-words [overflow-wrap:anywhere]"
+                >
+                  {await Promise.all(
+                    blocksInColumn.map(async (innerBlock) => {
+                      const innerKey =
+                        innerBlock.id ??
+                        `${key}-col-${idx}-${JSON.stringify(innerBlock).slice(0, 32)}`
+                      return await renderBlock(innerBlock, String(innerKey), opts)
+                    }),
+                  )}
+                </div>
+              )),
+            )}
           </div>
         </section>
       )
@@ -333,15 +519,37 @@ function renderBlock(block: BlockRendererBlock, key: string): React.ReactNode {
   }
 }
 
-export function BlockRenderer({ blocks }: { blocks: BlockRendererBlock[] | null | undefined }) {
+export async function BlockRenderer({
+  blocks,
+  pageSlug,
+}: {
+  blocks: BlockRendererBlock[] | null | undefined
+  pageSlug?: string
+}) {
   if (!blocks?.length) return null
 
-  return (
-    <div className="flex flex-col gap-12">
-      {blocks.map((block) => {
-        const key = block.id ?? JSON.stringify(block).slice(0, 40)
-        return renderBlock(block, String(key))
-      })}
-    </div>
-  )
+  const normalized = normalizeBlocks(blocks)
+  const rendered: React.ReactNode[] = []
+
+  for (let i = 0; i < normalized.length; i++) {
+    const block = normalized[i]
+    const prev = i > 0 ? normalized[i - 1] : null
+    const sectionTitle = pickStr(block.sectionTitle)
+    const prevHeading =
+      prev?.blockType === 'heading'
+        ? pickStr(prev.text)
+        : prev
+          ? headingTextFromContentBlock(prev)
+          : null
+    const hideFileListTitle =
+      block.blockType === 'fileList' &&
+      Boolean(sectionTitle && prevHeading && sectionTitle === prevHeading)
+
+    const key = block.id ?? JSON.stringify(block).slice(0, 40)
+    rendered.push(
+      await renderBlock(block, String(key), { hideFileListTitle, pageSlug }),
+    )
+  }
+
+  return <div className="flex flex-col gap-12">{rendered}</div>
 }

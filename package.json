@@ -3,9 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "db:start": "\"C:\\Program Files\\PostgreSQL\\18\\bin\\pg_ctl.exe\" -D .pgdata -o \"-p 5433\" -l .pgdata\\logfile start",
-    "db:stop": "\"C:\\Program Files\\PostgreSQL\\18\\bin\\pg_ctl.exe\" -D .pgdata stop",
-    "db:status": "\"C:\\Program Files\\PostgreSQL\\18\\bin\\pg_ctl.exe\" -D .pgdata status",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -14,7 +11,9 @@
     "generate:types": "payload generate:types --disable-transpile",
     "migrate": "payload migrate --disable-transpile",
     "migrate:create": "payload migrate:create --disable-transpile",
-    "seed": "payload seed --disable-transpile"
+    "purge-content": "payload purge-content --disable-transpile",
+    "import-content": "payload import-content --disable-transpile",
+    "patch-security-page": "payload patch-security-page --disable-transpile"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.83.0",

@@ -13,6 +13,35 @@ type NewsImage = {
   alt?: string | null
 } | null
 
+type NewsLike = {
+  title: string
+  thumbnail?: NewsImage
+  thumbnailUrl?: string | null
+  gallery?: Array<{ image?: NewsImage } | null> | null
+  galleryUrls?: Array<{ url?: string | null; alt?: string | null } | null> | null
+}
+
+function resolveNewsCover(item: NewsLike): { src: string; alt: string } {
+  if (item.thumbnailUrl) {
+    return { src: mediaSrc(item.thumbnailUrl), alt: item.title }
+  }
+  if (item.thumbnail?.url) {
+    return { src: mediaSrc(item.thumbnail.url), alt: item.thumbnail.alt || item.title }
+  }
+  const firstGalleryUrl = item.galleryUrls?.find((g) => g?.url)
+  if (firstGalleryUrl?.url) {
+    return { src: mediaSrc(firstGalleryUrl.url), alt: firstGalleryUrl.alt || item.title }
+  }
+  const firstGallery = item.gallery?.find((g) => g?.image?.url)
+  if (firstGallery?.image?.url) {
+    return {
+      src: mediaSrc(firstGallery.image.url),
+      alt: firstGallery.image.alt || item.title,
+    }
+  }
+  return { src: '', alt: item.title }
+}
+
 function toDateLabel(value: string | null | undefined) {
   if (!value) return 'Без даты'
   const dt = new Date(value)
@@ -52,8 +81,7 @@ export default async function NewsListPage({ searchParams }: { searchParams: Sea
       ) : (
         <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {result.docs.map((item) => {
-            const cover = item.gallery?.[0]?.image as NewsImage
-            const src = mediaSrc(cover?.url)
+            const { src, alt } = resolveNewsCover(item as unknown as NewsLike)
             return (
               <li key={String(item.id)}>
                 <Link
@@ -64,7 +92,7 @@ export default async function NewsListPage({ searchParams }: { searchParams: Sea
                     {src ? (
                       <Image
                         src={src}
-                        alt={cover?.alt || item.title}
+                        alt={alt}
                         fill
                         className="object-cover"
                         unoptimized

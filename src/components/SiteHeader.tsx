@@ -1,9 +1,13 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useCallback, useEffect, useId, useState } from 'react'
 
 import { cn } from '@/lib/utils'
+
+import { useVisionAccessibility } from '@/components/VisionAccessibilityProvider'
+import { VisionAccessibilityToolbar } from '@/components/VisionAccessibilityToolbar'
 
 type NavItem = {
   label?: string | null
@@ -33,7 +37,7 @@ function GlassesIcon({ className }: { className?: string }) {
 
 function BurgerIcon() {
   return (
-    <span className="flex w-5 flex-col justify-center gap-[5px]" aria-hidden>
+    <span className="flex w-4 flex-col justify-center gap-[4px]" aria-hidden>
       <span className="block h-0.5 w-full rounded-full bg-current" />
       <span className="block h-0.5 w-full rounded-full bg-current" />
       <span className="block h-0.5 w-full rounded-full bg-current" />
@@ -43,17 +47,20 @@ function BurgerIcon() {
 
 function CloseMenuIcon() {
   return (
-    <span className="relative flex h-5 w-5 items-center justify-center" aria-hidden>
-      <span className="absolute block h-0.5 w-5 rotate-45 rounded-full bg-current" />
-      <span className="absolute block h-0.5 w-5 -rotate-45 rounded-full bg-current" />
+    <span className="relative flex h-4 w-4 items-center justify-center" aria-hidden>
+      <span className="absolute block h-0.5 w-4 rotate-45 rounded-full bg-current" />
+      <span className="absolute block h-0.5 w-4 -rotate-45 rounded-full bg-current" />
     </span>
   )
 }
 
+const headerShell = 'mx-auto w-full max-w-5xl px-4'
+const headerBarClass = `${headerShell} flex items-center justify-between gap-3`
+
 const SOCIAL = [
-  { label: 'Одноклассники', href: 'https://ok.ru/group/70000002291664', short: 'OK' },
-  { label: 'ВКонтакте', href: 'https://vk.com/public219812778', short: 'VK' },
-  { label: 'Telegram', href: 'https://t.me/Kgkydduss', short: 'TG' },
+  { label: 'Одноклассники', href: 'https://ok.ru/group/70000002291664', icon: '/icons/ok.png' },
+  { label: 'ВКонтакте', href: 'https://vk.com/public219812778', icon: '/icons/vk.png' },
+  { label: 'Telegram', href: 'https://t.me/Kgkydduss', icon: '/icons/tg.png' },
 ] as const
 
 function MapPinIcon({ className }: { className?: string }) {
@@ -78,6 +85,7 @@ export function SiteHeader({ items }: { items: NavItem[] | null | undefined }) {
   const [open, setOpen] = useState(false)
   const panelId = useId()
   const close = useCallback(() => setOpen(false), [])
+  const { enabled: visionEnabled, toggleEnabled: toggleVision } = useVisionAccessibility()
 
   useEffect(() => {
     if (!open) return
@@ -93,74 +101,130 @@ export function SiteHeader({ items }: { items: NavItem[] | null | undefined }) {
     }
   }, [open, close])
 
-  if (!items?.length) return null
+  const navItems = items ?? []
 
   return (
     <>
       <div className="sticky top-0 z-50">
         {/* Верхняя полоса контактов */}
-        <div className="border-b border-stone-200/90 bg-white text-stone-700">
-          <div className="mx-auto grid w-full max-w-5xl grid-cols-2 gap-x-3 gap-y-2.5 px-4 py-2 text-xs sm:grid-cols-4 sm:gap-x-0 sm:text-sm">
-            <div className="flex min-h-9 items-center justify-center gap-2 sm:min-h-0">
-              {SOCIAL.map(({ label, href, short }) => (
+        <div data-site-header-top className="border-b border-stone-200/90 bg-white text-stone-700">
+          <div className={`${headerBarClass} hidden py-1.5 text-[11px] sm:flex sm:text-xs`}>
+            <div className="flex shrink-0 items-center gap-0.5">
+              {SOCIAL.map(({ label, href, icon }) => (
                 <a
                   key={href}
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-medium text-stone-600 underline-offset-2 transition-colors hover:text-stone-900 hover:underline"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded text-stone-600 transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800"
                   aria-label={label}
                 >
-                  {short}
+                  <Image
+                    src={icon}
+                    alt=""
+                    width={18}
+                    height={18}
+                    className="h-[18px] w-[18px]"
+                    data-vision-keep
+                  />
                 </a>
               ))}
             </div>
-            <span className="flex min-h-9 items-center justify-center gap-1.5 text-center text-stone-600 sm:min-h-0">
-              <MapPinIcon className="h-4 w-4 shrink-0 text-stone-500" />
+            <div className="flex min-w-0 flex-1 items-center justify-center gap-3 px-2 text-stone-600 sm:gap-5">
+              <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-stone-500" />
+                Уссурийск
+              </span>
+              <Link
+                href="/contacts"
+                className="inline-flex items-center gap-1 whitespace-nowrap text-stone-700 underline-offset-2 transition-colors hover:text-stone-950 hover:underline"
+              >
+                <MailIcon className="h-3.5 w-3.5 shrink-0 text-stone-500" />
+                Написать нам
+              </Link>
+            </div>
+            <span className="shrink-0 whitespace-nowrap tabular-nums text-stone-600">Пн–Сб 9:00–18:00</span>
+          </div>
+          <div className={`${headerShell} grid grid-cols-2 gap-x-3 gap-y-1 py-1.5 text-[11px] sm:hidden`}>
+            <div className="flex items-center justify-start gap-0.5">
+              {SOCIAL.map(({ label, href, icon }) => (
+                <a
+                  key={href}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded text-stone-600 transition-opacity hover:opacity-80"
+                  aria-label={label}
+                >
+                  <Image
+                    src={icon}
+                    alt=""
+                    width={18}
+                    height={18}
+                    className="h-[18px] w-[18px]"
+                    data-vision-keep
+                  />
+                </a>
+              ))}
+            </div>
+            <span className="flex items-center justify-end whitespace-nowrap tabular-nums text-stone-600">
+              Пн–Сб 9:00–18:00
+            </span>
+            <span className="inline-flex items-center justify-start gap-1 text-stone-600">
+              <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-stone-500" />
               Уссурийск
             </span>
             <Link
               href="/contacts"
-              className="flex min-h-9 items-center justify-center gap-1.5 text-center text-stone-700 underline-offset-2 transition-colors hover:text-stone-950 hover:underline sm:min-h-0"
+              className="inline-flex items-center justify-end gap-1 text-stone-700 underline-offset-2 hover:underline"
             >
-              <MailIcon className="h-4 w-4 shrink-0 text-stone-500" />
+              <MailIcon className="h-3.5 w-3.5 shrink-0 text-stone-500" />
               Написать нам
             </Link>
-            <span className="flex min-h-9 items-center justify-center text-center text-stone-600 tabular-nums sm:min-h-0 sm:whitespace-nowrap">
-              Пн–Сб 9:00–18:00
-            </span>
           </div>
-          <div className="flex h-1 w-full">
+          <div className="flex h-0.5 w-full">
             <div className="flex-1 bg-teal-500" aria-hidden />
             <div className="flex-1 bg-stone-700" aria-hidden />
             <div className="flex-1 bg-amber-400" aria-hidden />
           </div>
         </div>
 
-        <header className="border-b border-stone-900/10 bg-[#f6f5f1]/90 shadow-[0_6px_28px_-8px_rgba(28,25,23,0.18),0_1px_0_rgba(255,255,255,0.6)_inset] backdrop-blur-md supports-[backdrop-filter]:bg-[#f6f5f1]/80">
-          <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3.5">
+        <header
+          data-site-header-main
+          className="border-b border-stone-900/10 bg-[#f6f5f1]/90 shadow-[0_4px_20px_-8px_rgba(28,25,23,0.16),0_1px_0_rgba(255,255,255,0.6)_inset] backdrop-blur-md supports-[backdrop-filter]:bg-[#f6f5f1]/80"
+        >
+          <div className={`${headerBarClass} py-2`}>
             <button
               type="button"
-              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md border border-stone-400/60 bg-white/90 px-3 text-stone-800 shadow-sm transition-colors hover:border-stone-500 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800"
+              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-stone-400/60 bg-white/90 px-2.5 text-stone-800 shadow-sm transition-colors hover:border-stone-500 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800"
               aria-expanded={open}
               aria-controls={panelId}
               aria-label={open ? 'Закрыть меню' : 'Открыть меню'}
               onClick={() => setOpen((v) => !v)}
             >
               {open ? <CloseMenuIcon /> : <BurgerIcon />}
-              <span className="text-sm font-medium">Меню</span>
+              <span className="text-xs font-medium">Меню</span>
             </button>
             <button
               type="button"
-              className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-dashed border-stone-400/70 bg-white/70 text-stone-600 shadow-sm transition-colors hover:border-stone-500 hover:bg-white hover:text-stone-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800 disabled:cursor-not-allowed disabled:opacity-60"
-              title="Версия для слабовидящих — в разработке"
-              aria-label="Версия для слабовидящих. Раздел в разработке."
-              disabled
+              className={cn(
+                'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border bg-white/90 text-stone-800 shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800',
+                visionEnabled
+                  ? 'border-stone-900 bg-stone-900 text-white hover:bg-stone-800'
+                  : 'border-dashed border-stone-400/70 text-stone-600 hover:border-stone-500 hover:bg-white hover:text-stone-800',
+              )}
+              title={visionEnabled ? 'Выключить версию для слабовидящих' : 'Включить версию для слабовидящих'}
+              aria-label={
+                visionEnabled ? 'Выключить версию для слабовидящих' : 'Включить версию для слабовидящих'
+              }
+              aria-pressed={visionEnabled}
+              onClick={toggleVision}
             >
-              <GlassesIcon className="h-6 w-6" />
+              <GlassesIcon className="h-[18px] w-[18px]" />
             </button>
           </div>
         </header>
+        <VisionAccessibilityToolbar />
       </div>
 
       <button
@@ -196,8 +260,11 @@ export function SiteHeader({ items }: { items: NavItem[] | null | undefined }) {
           </button>
         </div>
         <nav className="flex-1 overflow-y-auto px-2 py-4">
+          {navItems.length === 0 ? (
+            <p className="px-3 py-2 text-sm text-stone-500">Пункты меню настраиваются в админке Payload.</p>
+          ) : null}
           <ul className="flex flex-col gap-1 text-[15px]">
-            {items.map((item, i) => (
+            {navItems.map((item, i) => (
               <li key={`${item.href}-${i}`} className="rounded-lg">
                 <Link
                   className="block rounded-md px-3 py-2.5 font-medium text-stone-800 transition-colors hover:bg-stone-200/50 hover:text-stone-950"

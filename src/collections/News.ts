@@ -17,7 +17,10 @@ export const News: CollectionConfig = {
     title: true,
     slug: true,
     publishedAt: true,
+    thumbnail: true,
+    thumbnailUrl: true,
     gallery: true,
+    galleryUrls: true,
   },
   admin: {
     useAsTitle: 'title',
@@ -40,11 +43,22 @@ export const News: CollectionConfig = {
       },
     },
     {
+      name: 'thumbnail',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Миниатюра (upload)',
+      admin: { description: 'Используется для карточки в ленте.' },
+    },
+    {
+      name: 'thumbnailUrl',
+      type: 'text',
+      label: 'Миниатюра (URL)',
+      admin: { description: 'Альтернатива upload — прямой URL.' },
+    },
+    {
       name: 'gallery',
       type: 'array',
-      label: 'Галерея',
-      minRows: 1,
-      required: true,
+      label: 'Галерея (upload)',
       fields: [
         {
           name: 'image',
@@ -53,6 +67,16 @@ export const News: CollectionConfig = {
           required: true,
           label: 'Изображение',
         },
+      ],
+    },
+    {
+      name: 'galleryUrls',
+      type: 'array',
+      label: 'Галерея (URL)',
+      admin: { description: 'Альтернатива — массив прямых URL изображений.' },
+      fields: [
+        { name: 'url', type: 'text', required: true, label: 'URL' },
+        { name: 'alt', type: 'text', label: 'Alt-текст' },
       ],
     },
     {

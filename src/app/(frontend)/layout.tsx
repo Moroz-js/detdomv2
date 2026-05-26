@@ -5,6 +5,8 @@ import { PreviewProvider } from '@/components/PreviewProvider'
 import { Container } from '@/components/Container'
 import { SiteFooter } from '@/components/SiteFooter'
 import { SiteHeader } from '@/components/SiteHeader'
+import { VisionAccessibilityInit } from '@/components/VisionAccessibilityInit'
+import { VisionAccessibilityProvider } from '@/components/VisionAccessibilityProvider'
 import { fetchFooterContent, fetchFooterNav, fetchHeaderNav } from '@/lib/fetchGlobals'
 
 import '../globals.css'
@@ -22,6 +24,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Детский дом',
   description: 'Официальный сайт',
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+  },
 }
 
 export default async function FrontendLayout({ children }: { children: React.ReactNode }) {
@@ -38,10 +44,13 @@ export default async function FrontendLayout({ children }: { children: React.Rea
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col text-stone-900">
+        <VisionAccessibilityInit />
         <PreviewProvider>
-          <SiteHeader items={header.items} />
-          <Container className="flex-1 py-10">{children}</Container>
-          <SiteFooter items={footer.items} footer={footerContent} />
+          <VisionAccessibilityProvider>
+            <SiteHeader items={header.items} />
+            <Container className="flex-1 py-10">{children}</Container>
+            <SiteFooter items={footer.items} footer={footerContent} />
+          </VisionAccessibilityProvider>
         </PreviewProvider>
       </body>
     </html>

@@ -40,3 +40,175 @@ body {
 html {
   overflow-x: clip;
 }
+
+/* Версия для слабовидящих (масштаб через font-size на html → все rem у Tailwind) */
+html[data-vision='on'] {
+  --vision-bg: #ffffff;
+  --vision-fg: #000000;
+  --vision-link: #0000cc;
+  --vision-border: #000000;
+  font-size: 20px;
+}
+
+html[data-vision='on'][data-vision-font='1'] {
+  font-size: 20px;
+}
+
+html[data-vision='on'][data-vision-font='2'] {
+  font-size: 24px;
+}
+
+html[data-vision='on'][data-vision-font='3'] {
+  font-size: 28px;
+}
+
+html[data-vision='on'][data-vision-theme='bw'] {
+  --vision-bg: #ffffff;
+  --vision-fg: #000000;
+  --vision-link: #0000cc;
+  --vision-border: #000000;
+}
+
+html[data-vision='on'][data-vision-theme='wb'] {
+  --vision-bg: #000000;
+  --vision-fg: #ffffff;
+  --vision-link: #ffff66;
+  --vision-border: #ffffff;
+}
+
+html[data-vision='on'][data-vision-theme='by'] {
+  --vision-bg: #ffff00;
+  --vision-fg: #000000;
+  --vision-link: #000000;
+  --vision-border: #000000;
+}
+
+html[data-vision='on'] body {
+  background: var(--vision-bg) !important;
+  background-image: none !important;
+  color: var(--vision-fg) !important;
+  font-size: 1rem;
+  line-height: 1.65 !important;
+  letter-spacing: 0.03em;
+}
+
+/* Панель настроек — всегда белая, изолирована от темы */
+html[data-vision='on'] [data-vision-panel],
+html[data-vision='on'] [data-vision-panel] > * {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-color: #cccccc !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+html[data-vision='on'] :where(a, button, input, select, textarea):focus-visible {
+  outline: 3px solid var(--vision-fg) !important;
+  outline-offset: 2px;
+}
+
+html[data-vision='on'] a {
+  color: var(--vision-link) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+}
+
+html[data-vision='on'] :where(header, footer, nav, main, article, aside, section) {
+  background-image: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Верхняя полоса и основная шапка (не панель БВИ) */
+html[data-vision='on'] [data-site-header-top],
+html[data-vision='on'] [data-site-header-main] {
+  background-color: var(--vision-bg) !important;
+  background-image: none !important;
+  color: var(--vision-fg) !important;
+  border-color: var(--vision-border) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+html[data-vision='on'] [data-site-header-top] span,
+html[data-vision='on'] [data-site-header-main] span {
+  color: var(--vision-fg) !important;
+}
+
+html[data-vision='on'] [data-site-header-top] a {
+  color: var(--vision-link) !important;
+}
+
+html[data-vision='on'] [data-site-header-main] button {
+  background-color: var(--vision-bg) !important;
+  color: var(--vision-fg) !important;
+  border-color: var(--vision-border) !important;
+}
+
+html[data-vision='on'] [data-site-header-main] button[aria-pressed='true'] {
+  background-color: var(--vision-fg) !important;
+  color: var(--vision-bg) !important;
+}
+
+html[data-vision='on'] [data-site-header-top] :where(.bg-teal-500, .bg-stone-700, .bg-amber-400) {
+  background-color: var(--vision-border) !important;
+}
+
+html[data-vision='on'] footer {
+  background: var(--vision-bg) !important;
+  color: var(--vision-fg) !important;
+  border-top: 2px solid var(--vision-border) !important;
+}
+
+html[data-vision='on'] footer :where(h2, p, span, li, a, div) {
+  color: var(--vision-fg) !important;
+}
+
+html[data-vision='on']
+  :where(.text-stone-500, .text-stone-600, .text-stone-700, .text-stone-800, .text-stone-900, .text-zinc-300, .text-zinc-400, .text-white) {
+  color: var(--vision-fg) !important;
+}
+
+html[data-vision='on'] main,
+html[data-vision='on'] article {
+  background-color: var(--vision-bg) !important;
+  color: var(--vision-fg) !important;
+}
+
+html[data-vision='on'] :where(button, input) {
+  color: var(--vision-fg) !important;
+  border-color: var(--vision-border) !important;
+}
+
+/* Кнопки панели */
+html[data-vision='on'] [data-vision-panel] button,
+html[data-vision='on'] [data-vision-panel] button * {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-color: #999999 !important;
+  background-image: none !important;
+}
+
+html[data-vision='on'] [data-vision-panel] button[aria-pressed='true'],
+html[data-vision='on'] [data-vision-panel] button[aria-pressed='true'] * {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #000000 !important;
+}
+
+html[data-vision='on'] .prose,
+html[data-vision='on'] .prose-invert {
+  --tw-prose-body: var(--vision-fg);
+  --tw-prose-headings: var(--vision-fg);
+  --tw-prose-links: var(--vision-link);
+  --tw-prose-bold: var(--vision-fg);
+}
+
+html[data-vision='on'] .prose :where(p, li, h1, h2, h3, h4, strong) {
+  color: var(--vision-fg) !important;
+}
+
+html[data-vision='on'][data-vision-images='off'] img:not([data-vision-keep]) {
+  visibility: hidden !important;
+  opacity: 0 !important;
+}

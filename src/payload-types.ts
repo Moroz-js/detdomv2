@@ -71,6 +71,8 @@ export interface Config {
     media: Media;
     pages: Page;
     news: News;
+    achievements: Achievement;
+    'form-submissions': FormSubmission;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -82,6 +84,8 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     news: NewsSelect<false> | NewsSelect<true>;
+    achievements: AchievementsSelect<false> | AchievementsSelect<true>;
+    'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -95,11 +99,13 @@ export interface Config {
     headerNav: HeaderNav;
     footerNav: FooterNav;
     footerContent: FooterContent;
+    homeSlider: HomeSlider;
   };
   globalsSelect: {
     headerNav: HeaderNavSelect<false> | HeaderNavSelect<true>;
     footerNav: FooterNavSelect<false> | FooterNavSelect<true>;
     footerContent: FooterContentSelect<false> | FooterContentSelect<true>;
+    homeSlider: HomeSliderSelect<false> | HomeSliderSelect<true>;
   };
   locale: null;
   widgets: {
@@ -190,12 +196,25 @@ export interface Page {
         | {
             heading: string;
             subtitle?: string | null;
+            /**
+             * Если задан — используется upload; иначе берётся URL ниже.
+             */
+            image?: (number | null) | Media;
+            /**
+             * Прямой URL (например, на detskiydomuss.ru).
+             */
+            imageUrl?: string | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'hero';
           }
         | {
-            image: number | Media;
+            image?: (number | null) | Media;
+            /**
+             * Альтернатива upload — прямой URL.
+             */
+            imageUrl?: string | null;
+            alt?: string | null;
             href?: string | null;
             id?: string | null;
             blockName?: string | null;
@@ -213,7 +232,9 @@ export interface Page {
         | {
             slides?:
               | {
-                  image: number | Media;
+                  image?: (number | null) | Media;
+                  imageUrl?: string | null;
+                  alt?: string | null;
                   href?: string | null;
                   id?: string | null;
                 }[]
@@ -243,7 +264,9 @@ export interface Page {
             blockType: 'content';
           }
         | {
-            media: number | Media;
+            media?: (number | null) | Media;
+            imageUrl?: string | null;
+            alt?: string | null;
             caption?: string | null;
             id?: string | null;
             blockName?: string | null;
@@ -252,6 +275,7 @@ export interface Page {
         | {
             title: string;
             intro?: string | null;
+            tabs?: ('help_request' | 'want_to_help' | 'feedback')[] | null;
             privacyHref?: string | null;
             id?: string | null;
             blockName?: string | null;
@@ -259,6 +283,10 @@ export interface Page {
           }
         | {
             text: string;
+            /**
+             * Без решётки, латиницей. Используется для ссылок вида /info#main, /socials#living и т.п.
+             */
+            anchorId?: string | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'heading';
@@ -268,13 +296,54 @@ export interface Page {
             items?:
               | {
                   title: string;
-                  file: number | Media;
+                  file?: (number | null) | Media;
+                  /**
+                   * Альтернатива upload — прямой URL.
+                   */
+                  fileUrl?: string | null;
+                  fileExt?: ('pdf' | 'docx' | 'doc' | 'xlsx' | 'xls' | 'zip' | 'other') | null;
                   id?: string | null;
                 }[]
               | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'fileList';
+          }
+        | {
+            title?: string | null;
+            /**
+             * Вставится «как есть». Используется для виджетов Госуслуг, форм CF7 и т.п.
+             */
+            html: string;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'embed';
+          }
+        | {
+            title?: string | null;
+            source: 'achievements' | 'custom';
+            year?: number | null;
+            items?:
+              | {
+                  image?: (number | null) | Media;
+                  imageUrl?: string | null;
+                  alt?: string | null;
+                  caption?: string | null;
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'gallery';
+          }
+        | {
+            /**
+             * Содержимое слайдера редактируется в глобале «Главный слайдер». Здесь — место для размещения.
+             */
+            note?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'homeSlider';
           }
         | {
             title?: string | null;
@@ -285,12 +354,25 @@ export interface Page {
                   | {
                       heading: string;
                       subtitle?: string | null;
+                      /**
+                       * Если задан — используется upload; иначе берётся URL ниже.
+                       */
+                      image?: (number | null) | Media;
+                      /**
+                       * Прямой URL (например, на detskiydomuss.ru).
+                       */
+                      imageUrl?: string | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'hero';
                     }
                   | {
-                      image: number | Media;
+                      image?: (number | null) | Media;
+                      /**
+                       * Альтернатива upload — прямой URL.
+                       */
+                      imageUrl?: string | null;
+                      alt?: string | null;
                       href?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -308,7 +390,9 @@ export interface Page {
                   | {
                       slides?:
                         | {
-                            image: number | Media;
+                            image?: (number | null) | Media;
+                            imageUrl?: string | null;
+                            alt?: string | null;
                             href?: string | null;
                             id?: string | null;
                           }[]
@@ -338,7 +422,9 @@ export interface Page {
                       blockType: 'content';
                     }
                   | {
-                      media: number | Media;
+                      media?: (number | null) | Media;
+                      imageUrl?: string | null;
+                      alt?: string | null;
                       caption?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -347,6 +433,7 @@ export interface Page {
                   | {
                       title: string;
                       intro?: string | null;
+                      tabs?: ('help_request' | 'want_to_help' | 'feedback')[] | null;
                       privacyHref?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -354,6 +441,10 @@ export interface Page {
                     }
                   | {
                       text: string;
+                      /**
+                       * Без решётки, латиницей. Используется для ссылок вида /info#main, /socials#living и т.п.
+                       */
+                      anchorId?: string | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'heading';
@@ -363,13 +454,28 @@ export interface Page {
                       items?:
                         | {
                             title: string;
-                            file: number | Media;
+                            file?: (number | null) | Media;
+                            /**
+                             * Альтернатива upload — прямой URL.
+                             */
+                            fileUrl?: string | null;
+                            fileExt?: ('pdf' | 'docx' | 'doc' | 'xlsx' | 'xls' | 'zip' | 'other') | null;
                             id?: string | null;
                           }[]
                         | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'fileList';
+                    }
+                  | {
+                      title?: string | null;
+                      /**
+                       * Вставится «как есть». Используется для виджетов Госуслуг, форм CF7 и т.п.
+                       */
+                      html: string;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'embed';
                     }
                 )[]
               | null;
@@ -378,12 +484,25 @@ export interface Page {
                   | {
                       heading: string;
                       subtitle?: string | null;
+                      /**
+                       * Если задан — используется upload; иначе берётся URL ниже.
+                       */
+                      image?: (number | null) | Media;
+                      /**
+                       * Прямой URL (например, на detskiydomuss.ru).
+                       */
+                      imageUrl?: string | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'hero';
                     }
                   | {
-                      image: number | Media;
+                      image?: (number | null) | Media;
+                      /**
+                       * Альтернатива upload — прямой URL.
+                       */
+                      imageUrl?: string | null;
+                      alt?: string | null;
                       href?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -401,7 +520,9 @@ export interface Page {
                   | {
                       slides?:
                         | {
-                            image: number | Media;
+                            image?: (number | null) | Media;
+                            imageUrl?: string | null;
+                            alt?: string | null;
                             href?: string | null;
                             id?: string | null;
                           }[]
@@ -431,7 +552,9 @@ export interface Page {
                       blockType: 'content';
                     }
                   | {
-                      media: number | Media;
+                      media?: (number | null) | Media;
+                      imageUrl?: string | null;
+                      alt?: string | null;
                       caption?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -440,6 +563,7 @@ export interface Page {
                   | {
                       title: string;
                       intro?: string | null;
+                      tabs?: ('help_request' | 'want_to_help' | 'feedback')[] | null;
                       privacyHref?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -447,6 +571,10 @@ export interface Page {
                     }
                   | {
                       text: string;
+                      /**
+                       * Без решётки, латиницей. Используется для ссылок вида /info#main, /socials#living и т.п.
+                       */
+                      anchorId?: string | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'heading';
@@ -456,13 +584,28 @@ export interface Page {
                       items?:
                         | {
                             title: string;
-                            file: number | Media;
+                            file?: (number | null) | Media;
+                            /**
+                             * Альтернатива upload — прямой URL.
+                             */
+                            fileUrl?: string | null;
+                            fileExt?: ('pdf' | 'docx' | 'doc' | 'xlsx' | 'xls' | 'zip' | 'other') | null;
                             id?: string | null;
                           }[]
                         | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'fileList';
+                    }
+                  | {
+                      title?: string | null;
+                      /**
+                       * Вставится «как есть». Используется для виджетов Госуслуг, форм CF7 и т.п.
+                       */
+                      html: string;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'embed';
                     }
                 )[]
               | null;
@@ -471,12 +614,25 @@ export interface Page {
                   | {
                       heading: string;
                       subtitle?: string | null;
+                      /**
+                       * Если задан — используется upload; иначе берётся URL ниже.
+                       */
+                      image?: (number | null) | Media;
+                      /**
+                       * Прямой URL (например, на detskiydomuss.ru).
+                       */
+                      imageUrl?: string | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'hero';
                     }
                   | {
-                      image: number | Media;
+                      image?: (number | null) | Media;
+                      /**
+                       * Альтернатива upload — прямой URL.
+                       */
+                      imageUrl?: string | null;
+                      alt?: string | null;
                       href?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -494,7 +650,9 @@ export interface Page {
                   | {
                       slides?:
                         | {
-                            image: number | Media;
+                            image?: (number | null) | Media;
+                            imageUrl?: string | null;
+                            alt?: string | null;
                             href?: string | null;
                             id?: string | null;
                           }[]
@@ -524,7 +682,9 @@ export interface Page {
                       blockType: 'content';
                     }
                   | {
-                      media: number | Media;
+                      media?: (number | null) | Media;
+                      imageUrl?: string | null;
+                      alt?: string | null;
                       caption?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -533,6 +693,7 @@ export interface Page {
                   | {
                       title: string;
                       intro?: string | null;
+                      tabs?: ('help_request' | 'want_to_help' | 'feedback')[] | null;
                       privacyHref?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -540,6 +701,10 @@ export interface Page {
                     }
                   | {
                       text: string;
+                      /**
+                       * Без решётки, латиницей. Используется для ссылок вида /info#main, /socials#living и т.п.
+                       */
+                      anchorId?: string | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'heading';
@@ -549,13 +714,28 @@ export interface Page {
                       items?:
                         | {
                             title: string;
-                            file: number | Media;
+                            file?: (number | null) | Media;
+                            /**
+                             * Альтернатива upload — прямой URL.
+                             */
+                            fileUrl?: string | null;
+                            fileExt?: ('pdf' | 'docx' | 'doc' | 'xlsx' | 'xls' | 'zip' | 'other') | null;
                             id?: string | null;
                           }[]
                         | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'fileList';
+                    }
+                  | {
+                      title?: string | null;
+                      /**
+                       * Вставится «как есть». Используется для виджетов Госуслуг, форм CF7 и т.п.
+                       */
+                      html: string;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'embed';
                     }
                 )[]
               | null;
@@ -564,12 +744,25 @@ export interface Page {
                   | {
                       heading: string;
                       subtitle?: string | null;
+                      /**
+                       * Если задан — используется upload; иначе берётся URL ниже.
+                       */
+                      image?: (number | null) | Media;
+                      /**
+                       * Прямой URL (например, на detskiydomuss.ru).
+                       */
+                      imageUrl?: string | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'hero';
                     }
                   | {
-                      image: number | Media;
+                      image?: (number | null) | Media;
+                      /**
+                       * Альтернатива upload — прямой URL.
+                       */
+                      imageUrl?: string | null;
+                      alt?: string | null;
                       href?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -587,7 +780,9 @@ export interface Page {
                   | {
                       slides?:
                         | {
-                            image: number | Media;
+                            image?: (number | null) | Media;
+                            imageUrl?: string | null;
+                            alt?: string | null;
                             href?: string | null;
                             id?: string | null;
                           }[]
@@ -617,7 +812,9 @@ export interface Page {
                       blockType: 'content';
                     }
                   | {
-                      media: number | Media;
+                      media?: (number | null) | Media;
+                      imageUrl?: string | null;
+                      alt?: string | null;
                       caption?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -626,6 +823,7 @@ export interface Page {
                   | {
                       title: string;
                       intro?: string | null;
+                      tabs?: ('help_request' | 'want_to_help' | 'feedback')[] | null;
                       privacyHref?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -633,6 +831,10 @@ export interface Page {
                     }
                   | {
                       text: string;
+                      /**
+                       * Без решётки, латиницей. Используется для ссылок вида /info#main, /socials#living и т.п.
+                       */
+                      anchorId?: string | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'heading';
@@ -642,13 +844,28 @@ export interface Page {
                       items?:
                         | {
                             title: string;
-                            file: number | Media;
+                            file?: (number | null) | Media;
+                            /**
+                             * Альтернатива upload — прямой URL.
+                             */
+                            fileUrl?: string | null;
+                            fileExt?: ('pdf' | 'docx' | 'doc' | 'xlsx' | 'xls' | 'zip' | 'other') | null;
                             id?: string | null;
                           }[]
                         | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'fileList';
+                    }
+                  | {
+                      title?: string | null;
+                      /**
+                       * Вставится «как есть». Используется для виджетов Госуслуг, форм CF7 и т.п.
+                       */
+                      html: string;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'embed';
                     }
                 )[]
               | null;
@@ -657,12 +874,25 @@ export interface Page {
                   | {
                       heading: string;
                       subtitle?: string | null;
+                      /**
+                       * Если задан — используется upload; иначе берётся URL ниже.
+                       */
+                      image?: (number | null) | Media;
+                      /**
+                       * Прямой URL (например, на detskiydomuss.ru).
+                       */
+                      imageUrl?: string | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'hero';
                     }
                   | {
-                      image: number | Media;
+                      image?: (number | null) | Media;
+                      /**
+                       * Альтернатива upload — прямой URL.
+                       */
+                      imageUrl?: string | null;
+                      alt?: string | null;
                       href?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -680,7 +910,9 @@ export interface Page {
                   | {
                       slides?:
                         | {
-                            image: number | Media;
+                            image?: (number | null) | Media;
+                            imageUrl?: string | null;
+                            alt?: string | null;
                             href?: string | null;
                             id?: string | null;
                           }[]
@@ -710,7 +942,9 @@ export interface Page {
                       blockType: 'content';
                     }
                   | {
-                      media: number | Media;
+                      media?: (number | null) | Media;
+                      imageUrl?: string | null;
+                      alt?: string | null;
                       caption?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -719,6 +953,7 @@ export interface Page {
                   | {
                       title: string;
                       intro?: string | null;
+                      tabs?: ('help_request' | 'want_to_help' | 'feedback')[] | null;
                       privacyHref?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -726,6 +961,10 @@ export interface Page {
                     }
                   | {
                       text: string;
+                      /**
+                       * Без решётки, латиницей. Используется для ссылок вида /info#main, /socials#living и т.п.
+                       */
+                      anchorId?: string | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'heading';
@@ -735,13 +974,28 @@ export interface Page {
                       items?:
                         | {
                             title: string;
-                            file: number | Media;
+                            file?: (number | null) | Media;
+                            /**
+                             * Альтернатива upload — прямой URL.
+                             */
+                            fileUrl?: string | null;
+                            fileExt?: ('pdf' | 'docx' | 'doc' | 'xlsx' | 'xls' | 'zip' | 'other') | null;
                             id?: string | null;
                           }[]
                         | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'fileList';
+                    }
+                  | {
+                      title?: string | null;
+                      /**
+                       * Вставится «как есть». Используется для виджетов Госуслуг, форм CF7 и т.п.
+                       */
+                      html: string;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'embed';
                     }
                 )[]
               | null;
@@ -750,12 +1004,25 @@ export interface Page {
                   | {
                       heading: string;
                       subtitle?: string | null;
+                      /**
+                       * Если задан — используется upload; иначе берётся URL ниже.
+                       */
+                      image?: (number | null) | Media;
+                      /**
+                       * Прямой URL (например, на detskiydomuss.ru).
+                       */
+                      imageUrl?: string | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'hero';
                     }
                   | {
-                      image: number | Media;
+                      image?: (number | null) | Media;
+                      /**
+                       * Альтернатива upload — прямой URL.
+                       */
+                      imageUrl?: string | null;
+                      alt?: string | null;
                       href?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -773,7 +1040,9 @@ export interface Page {
                   | {
                       slides?:
                         | {
-                            image: number | Media;
+                            image?: (number | null) | Media;
+                            imageUrl?: string | null;
+                            alt?: string | null;
                             href?: string | null;
                             id?: string | null;
                           }[]
@@ -803,7 +1072,9 @@ export interface Page {
                       blockType: 'content';
                     }
                   | {
-                      media: number | Media;
+                      media?: (number | null) | Media;
+                      imageUrl?: string | null;
+                      alt?: string | null;
                       caption?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -812,6 +1083,7 @@ export interface Page {
                   | {
                       title: string;
                       intro?: string | null;
+                      tabs?: ('help_request' | 'want_to_help' | 'feedback')[] | null;
                       privacyHref?: string | null;
                       id?: string | null;
                       blockName?: string | null;
@@ -819,6 +1091,10 @@ export interface Page {
                     }
                   | {
                       text: string;
+                      /**
+                       * Без решётки, латиницей. Используется для ссылок вида /info#main, /socials#living и т.п.
+                       */
+                      anchorId?: string | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'heading';
@@ -828,13 +1104,28 @@ export interface Page {
                       items?:
                         | {
                             title: string;
-                            file: number | Media;
+                            file?: (number | null) | Media;
+                            /**
+                             * Альтернатива upload — прямой URL.
+                             */
+                            fileUrl?: string | null;
+                            fileExt?: ('pdf' | 'docx' | 'doc' | 'xlsx' | 'xls' | 'zip' | 'other') | null;
                             id?: string | null;
                           }[]
                         | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'fileList';
+                    }
+                  | {
+                      title?: string | null;
+                      /**
+                       * Вставится «как есть». Используется для виджетов Госуслуг, форм CF7 и т.п.
+                       */
+                      html: string;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'embed';
                     }
                 )[]
               | null;
@@ -861,10 +1152,30 @@ export interface News {
   generateSlug?: boolean | null;
   slug: string;
   publishedAt: string;
-  gallery: {
-    image: number | Media;
-    id?: string | null;
-  }[];
+  /**
+   * Используется для карточки в ленте.
+   */
+  thumbnail?: (number | null) | Media;
+  /**
+   * Альтернатива upload — прямой URL.
+   */
+  thumbnailUrl?: string | null;
+  gallery?:
+    | {
+        image: number | Media;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Альтернатива — массив прямых URL изображений.
+   */
+  galleryUrls?:
+    | {
+        url: string;
+        alt?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   content: {
     root: {
       type: string;
@@ -883,6 +1194,48 @@ export interface News {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "achievements".
+ */
+export interface Achievement {
+  id: number;
+  /**
+   * Сортировка в галерее (1, 2, 3, ...).
+   */
+  order: number;
+  /**
+   * Можно оставить пустым или поставить «1», «2», ...
+   */
+  title?: string | null;
+  year?: number | null;
+  image?: (number | null) | Media;
+  /**
+   * Альтернатива upload — прямой URL.
+   */
+  imageUrl?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Заявки с публичных форм сайта (без отправки email — оператор обрабатывает вручную).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "form-submissions".
+ */
+export interface FormSubmission {
+  id: number;
+  formType: 'help_request' | 'want_to_help' | 'feedback';
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  subject?: string | null;
+  message: string;
+  pageSlug?: string | null;
+  status: 'new' | 'in_progress' | 'done';
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -923,6 +1276,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'news';
         value: number | News;
+      } | null)
+    | ({
+        relationTo: 'achievements';
+        value: number | Achievement;
+      } | null)
+    | ({
+        relationTo: 'form-submissions';
+        value: number | FormSubmission;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1022,6 +1383,8 @@ export interface PagesSelect<T extends boolean = true> {
           | {
               heading?: T;
               subtitle?: T;
+              image?: T;
+              imageUrl?: T;
               id?: T;
               blockName?: T;
             };
@@ -1029,6 +1392,8 @@ export interface PagesSelect<T extends boolean = true> {
           | T
           | {
               image?: T;
+              imageUrl?: T;
+              alt?: T;
               href?: T;
               id?: T;
               blockName?: T;
@@ -1050,6 +1415,8 @@ export interface PagesSelect<T extends boolean = true> {
                 | T
                 | {
                     image?: T;
+                    imageUrl?: T;
+                    alt?: T;
                     href?: T;
                     id?: T;
                   };
@@ -1067,6 +1434,8 @@ export interface PagesSelect<T extends boolean = true> {
           | T
           | {
               media?: T;
+              imageUrl?: T;
+              alt?: T;
               caption?: T;
               id?: T;
               blockName?: T;
@@ -1076,6 +1445,7 @@ export interface PagesSelect<T extends boolean = true> {
           | {
               title?: T;
               intro?: T;
+              tabs?: T;
               privacyHref?: T;
               id?: T;
               blockName?: T;
@@ -1084,6 +1454,7 @@ export interface PagesSelect<T extends boolean = true> {
           | T
           | {
               text?: T;
+              anchorId?: T;
               id?: T;
               blockName?: T;
             };
@@ -1096,8 +1467,43 @@ export interface PagesSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     file?: T;
+                    fileUrl?: T;
+                    fileExt?: T;
                     id?: T;
                   };
+              id?: T;
+              blockName?: T;
+            };
+        embed?:
+          | T
+          | {
+              title?: T;
+              html?: T;
+              id?: T;
+              blockName?: T;
+            };
+        gallery?:
+          | T
+          | {
+              title?: T;
+              source?: T;
+              year?: T;
+              items?:
+                | T
+                | {
+                    image?: T;
+                    imageUrl?: T;
+                    alt?: T;
+                    caption?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        homeSlider?:
+          | T
+          | {
+              note?: T;
               id?: T;
               blockName?: T;
             };
@@ -1115,6 +1521,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | {
                           heading?: T;
                           subtitle?: T;
+                          image?: T;
+                          imageUrl?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1122,6 +1530,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           image?: T;
+                          imageUrl?: T;
+                          alt?: T;
                           href?: T;
                           id?: T;
                           blockName?: T;
@@ -1143,6 +1553,8 @@ export interface PagesSelect<T extends boolean = true> {
                             | T
                             | {
                                 image?: T;
+                                imageUrl?: T;
+                                alt?: T;
                                 href?: T;
                                 id?: T;
                               };
@@ -1160,6 +1572,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           media?: T;
+                          imageUrl?: T;
+                          alt?: T;
                           caption?: T;
                           id?: T;
                           blockName?: T;
@@ -1169,6 +1583,7 @@ export interface PagesSelect<T extends boolean = true> {
                       | {
                           title?: T;
                           intro?: T;
+                          tabs?: T;
                           privacyHref?: T;
                           id?: T;
                           blockName?: T;
@@ -1177,6 +1592,7 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           text?: T;
+                          anchorId?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1189,8 +1605,18 @@ export interface PagesSelect<T extends boolean = true> {
                             | {
                                 title?: T;
                                 file?: T;
+                                fileUrl?: T;
+                                fileExt?: T;
                                 id?: T;
                               };
+                          id?: T;
+                          blockName?: T;
+                        };
+                    embed?:
+                      | T
+                      | {
+                          title?: T;
+                          html?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1203,6 +1629,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | {
                           heading?: T;
                           subtitle?: T;
+                          image?: T;
+                          imageUrl?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1210,6 +1638,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           image?: T;
+                          imageUrl?: T;
+                          alt?: T;
                           href?: T;
                           id?: T;
                           blockName?: T;
@@ -1231,6 +1661,8 @@ export interface PagesSelect<T extends boolean = true> {
                             | T
                             | {
                                 image?: T;
+                                imageUrl?: T;
+                                alt?: T;
                                 href?: T;
                                 id?: T;
                               };
@@ -1248,6 +1680,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           media?: T;
+                          imageUrl?: T;
+                          alt?: T;
                           caption?: T;
                           id?: T;
                           blockName?: T;
@@ -1257,6 +1691,7 @@ export interface PagesSelect<T extends boolean = true> {
                       | {
                           title?: T;
                           intro?: T;
+                          tabs?: T;
                           privacyHref?: T;
                           id?: T;
                           blockName?: T;
@@ -1265,6 +1700,7 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           text?: T;
+                          anchorId?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1277,8 +1713,18 @@ export interface PagesSelect<T extends boolean = true> {
                             | {
                                 title?: T;
                                 file?: T;
+                                fileUrl?: T;
+                                fileExt?: T;
                                 id?: T;
                               };
+                          id?: T;
+                          blockName?: T;
+                        };
+                    embed?:
+                      | T
+                      | {
+                          title?: T;
+                          html?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1291,6 +1737,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | {
                           heading?: T;
                           subtitle?: T;
+                          image?: T;
+                          imageUrl?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1298,6 +1746,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           image?: T;
+                          imageUrl?: T;
+                          alt?: T;
                           href?: T;
                           id?: T;
                           blockName?: T;
@@ -1319,6 +1769,8 @@ export interface PagesSelect<T extends boolean = true> {
                             | T
                             | {
                                 image?: T;
+                                imageUrl?: T;
+                                alt?: T;
                                 href?: T;
                                 id?: T;
                               };
@@ -1336,6 +1788,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           media?: T;
+                          imageUrl?: T;
+                          alt?: T;
                           caption?: T;
                           id?: T;
                           blockName?: T;
@@ -1345,6 +1799,7 @@ export interface PagesSelect<T extends boolean = true> {
                       | {
                           title?: T;
                           intro?: T;
+                          tabs?: T;
                           privacyHref?: T;
                           id?: T;
                           blockName?: T;
@@ -1353,6 +1808,7 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           text?: T;
+                          anchorId?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1365,8 +1821,18 @@ export interface PagesSelect<T extends boolean = true> {
                             | {
                                 title?: T;
                                 file?: T;
+                                fileUrl?: T;
+                                fileExt?: T;
                                 id?: T;
                               };
+                          id?: T;
+                          blockName?: T;
+                        };
+                    embed?:
+                      | T
+                      | {
+                          title?: T;
+                          html?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1379,6 +1845,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | {
                           heading?: T;
                           subtitle?: T;
+                          image?: T;
+                          imageUrl?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1386,6 +1854,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           image?: T;
+                          imageUrl?: T;
+                          alt?: T;
                           href?: T;
                           id?: T;
                           blockName?: T;
@@ -1407,6 +1877,8 @@ export interface PagesSelect<T extends boolean = true> {
                             | T
                             | {
                                 image?: T;
+                                imageUrl?: T;
+                                alt?: T;
                                 href?: T;
                                 id?: T;
                               };
@@ -1424,6 +1896,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           media?: T;
+                          imageUrl?: T;
+                          alt?: T;
                           caption?: T;
                           id?: T;
                           blockName?: T;
@@ -1433,6 +1907,7 @@ export interface PagesSelect<T extends boolean = true> {
                       | {
                           title?: T;
                           intro?: T;
+                          tabs?: T;
                           privacyHref?: T;
                           id?: T;
                           blockName?: T;
@@ -1441,6 +1916,7 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           text?: T;
+                          anchorId?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1453,8 +1929,18 @@ export interface PagesSelect<T extends boolean = true> {
                             | {
                                 title?: T;
                                 file?: T;
+                                fileUrl?: T;
+                                fileExt?: T;
                                 id?: T;
                               };
+                          id?: T;
+                          blockName?: T;
+                        };
+                    embed?:
+                      | T
+                      | {
+                          title?: T;
+                          html?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1467,6 +1953,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | {
                           heading?: T;
                           subtitle?: T;
+                          image?: T;
+                          imageUrl?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1474,6 +1962,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           image?: T;
+                          imageUrl?: T;
+                          alt?: T;
                           href?: T;
                           id?: T;
                           blockName?: T;
@@ -1495,6 +1985,8 @@ export interface PagesSelect<T extends boolean = true> {
                             | T
                             | {
                                 image?: T;
+                                imageUrl?: T;
+                                alt?: T;
                                 href?: T;
                                 id?: T;
                               };
@@ -1512,6 +2004,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           media?: T;
+                          imageUrl?: T;
+                          alt?: T;
                           caption?: T;
                           id?: T;
                           blockName?: T;
@@ -1521,6 +2015,7 @@ export interface PagesSelect<T extends boolean = true> {
                       | {
                           title?: T;
                           intro?: T;
+                          tabs?: T;
                           privacyHref?: T;
                           id?: T;
                           blockName?: T;
@@ -1529,6 +2024,7 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           text?: T;
+                          anchorId?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1541,8 +2037,18 @@ export interface PagesSelect<T extends boolean = true> {
                             | {
                                 title?: T;
                                 file?: T;
+                                fileUrl?: T;
+                                fileExt?: T;
                                 id?: T;
                               };
+                          id?: T;
+                          blockName?: T;
+                        };
+                    embed?:
+                      | T
+                      | {
+                          title?: T;
+                          html?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1555,6 +2061,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | {
                           heading?: T;
                           subtitle?: T;
+                          image?: T;
+                          imageUrl?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1562,6 +2070,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           image?: T;
+                          imageUrl?: T;
+                          alt?: T;
                           href?: T;
                           id?: T;
                           blockName?: T;
@@ -1583,6 +2093,8 @@ export interface PagesSelect<T extends boolean = true> {
                             | T
                             | {
                                 image?: T;
+                                imageUrl?: T;
+                                alt?: T;
                                 href?: T;
                                 id?: T;
                               };
@@ -1600,6 +2112,8 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           media?: T;
+                          imageUrl?: T;
+                          alt?: T;
                           caption?: T;
                           id?: T;
                           blockName?: T;
@@ -1609,6 +2123,7 @@ export interface PagesSelect<T extends boolean = true> {
                       | {
                           title?: T;
                           intro?: T;
+                          tabs?: T;
                           privacyHref?: T;
                           id?: T;
                           blockName?: T;
@@ -1617,6 +2132,7 @@ export interface PagesSelect<T extends boolean = true> {
                       | T
                       | {
                           text?: T;
+                          anchorId?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1629,8 +2145,18 @@ export interface PagesSelect<T extends boolean = true> {
                             | {
                                 title?: T;
                                 file?: T;
+                                fileUrl?: T;
+                                fileExt?: T;
                                 id?: T;
                               };
+                          id?: T;
+                          blockName?: T;
+                        };
+                    embed?:
+                      | T
+                      | {
+                          title?: T;
+                          html?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1652,16 +2178,54 @@ export interface NewsSelect<T extends boolean = true> {
   generateSlug?: T;
   slug?: T;
   publishedAt?: T;
+  thumbnail?: T;
+  thumbnailUrl?: T;
   gallery?:
     | T
     | {
         image?: T;
         id?: T;
       };
+  galleryUrls?:
+    | T
+    | {
+        url?: T;
+        alt?: T;
+        id?: T;
+      };
   content?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "achievements_select".
+ */
+export interface AchievementsSelect<T extends boolean = true> {
+  order?: T;
+  title?: T;
+  year?: T;
+  image?: T;
+  imageUrl?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "form-submissions_select".
+ */
+export interface FormSubmissionsSelect<T extends boolean = true> {
+  formType?: T;
+  name?: T;
+  phone?: T;
+  email?: T;
+  subject?: T;
+  message?: T;
+  pageSlug?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1788,6 +2352,28 @@ export interface FooterContent {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "homeSlider".
+ */
+export interface HomeSlider {
+  id: number;
+  slides?:
+    | {
+        image?: (number | null) | Media;
+        /**
+         * Альтернатива upload — прямой URL.
+         */
+        imageUrl?: string | null;
+        alt?: string | null;
+        href?: string | null;
+        title?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "headerNav_select".
  */
 export interface HeaderNavSelect<T extends boolean = true> {
@@ -1837,6 +2423,25 @@ export interface FooterContentSelect<T extends boolean = true> {
   copyrightOrganization?: T;
   busBadgeImageUrl?: T;
   busBadgeImageAlt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "homeSlider_select".
+ */
+export interface HomeSliderSelect<T extends boolean = true> {
+  slides?:
+    | T
+    | {
+        image?: T;
+        imageUrl?: T;
+        alt?: T;
+        href?: T;
+        title?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

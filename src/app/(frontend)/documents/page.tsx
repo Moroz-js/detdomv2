@@ -20,7 +20,7 @@ export default async function DocumentsPage() {
 
   return (
     <article>
-      <BlockRenderer blocks={page.blocks} />
+      <BlockRenderer blocks={page.blocks} pageSlug="documents" />
     </article>
   )
 }

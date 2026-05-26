@@ -26,7 +26,7 @@ export default async function DynamicPage({ params }: Props) {
 
   return (
     <article>
-      <BlockRenderer blocks={page.blocks} />
+      <BlockRenderer blocks={page.blocks} pageSlug={slug} />
     </article>
   )
 }
