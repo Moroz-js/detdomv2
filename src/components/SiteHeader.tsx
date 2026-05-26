@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useCallback, useEffect, useId, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { cn } from '@/lib/utils'
 
@@ -81,32 +82,52 @@ function MailIcon({ className }: { className?: string }) {
   )
 }
 
+function lockBodyScroll() {
+  document.documentElement.classList.add('site-menu-open')
+}
+
+function unlockBodyScroll() {
+  document.documentElement.classList.remove('site-menu-open')
+}
+
 export function SiteHeader({ items }: { items: NavItem[] | null | undefined }) {
   const [open, setOpen] = useState(false)
+  const [portalReady, setPortalReady] = useState(false)
   const panelId = useId()
   const close = useCallback(() => setOpen(false), [])
   const { enabled: visionEnabled, toggleEnabled: toggleVision } = useVisionAccessibility()
 
   useEffect(() => {
+    setPortalReady(true)
+  }, [])
+
+  useEffect(() => {
     if (!open) return
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close()
     }
     document.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const preventTouchScroll = (e: TouchEvent) => {
+      const panel = document.getElementById(panelId)
+      if (panel?.contains(e.target as Node)) return
+      e.preventDefault()
+    }
+    document.addEventListener('touchmove', preventTouchScroll, { passive: false })
+    lockBodyScroll()
+
     return () => {
       document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prev
+      document.removeEventListener('touchmove', preventTouchScroll)
+      unlockBodyScroll()
     }
-  }, [open, close])
+  }, [open, close, panelId])
 
   const navItems = items ?? []
 
   return (
     <>
-      <div className="sticky top-0 z-50">
-        {/* Верхняя полоса контактов */}
+      <div data-site-header-sticky className="sticky top-0 z-50 w-full">
         <div data-site-header-top className="border-b border-stone-200/90 bg-white text-stone-700">
           <div className={`${headerBarClass} hidden py-1.5 text-[11px] sm:flex sm:text-xs`}>
             <div className="flex shrink-0 items-center gap-0.5">
@@ -227,72 +248,74 @@ export function SiteHeader({ items }: { items: NavItem[] | null | undefined }) {
         <VisionAccessibilityToolbar />
       </div>
 
-      <button
-        type="button"
-        aria-label="Закрыть меню"
-        className={cn(
-          'fixed inset-0 z-[60] bg-stone-950/45 transition-opacity duration-300',
-          open ? 'opacity-100' : 'pointer-events-none opacity-0',
-        )}
-        onClick={close}
-      />
+      {portalReady && open
+        ? createPortal(
+            <>
+              <button
+                type="button"
+                aria-label="Закрыть меню"
+                className="site-menu-overlay z-[100]"
+                onClick={close}
+              />
 
-      <div
-        id={panelId}
-        className={cn(
-          'fixed left-0 top-0 z-[70] flex h-full w-full max-w-sm flex-col border-r border-stone-200/90 bg-[#f4f3ef] shadow-[8px_0_32px_-8px_rgba(28,25,23,0.2)] transition-transform duration-300 ease-out',
-          open ? 'translate-x-0' : 'pointer-events-none -translate-x-full',
-        )}
-        role="dialog"
-        aria-modal={open}
-        aria-hidden={!open}
-        aria-label="Навигация по сайту"
-      >
-        <div className="flex items-center justify-between border-b border-stone-200/80 px-4 py-3">
-          <span className="text-sm font-semibold uppercase tracking-wide text-stone-500">Меню</span>
-          <button
-            type="button"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-stone-600 transition-colors hover:bg-stone-200/60 hover:text-stone-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800"
-            aria-label="Закрыть"
-            onClick={close}
-          >
-            <CloseMenuIcon />
-          </button>
-        </div>
-        <nav className="flex-1 overflow-y-auto px-2 py-4">
-          {navItems.length === 0 ? (
-            <p className="px-3 py-2 text-sm text-stone-500">Пункты меню настраиваются в админке Payload.</p>
-          ) : null}
-          <ul className="flex flex-col gap-1 text-[15px]">
-            {navItems.map((item, i) => (
-              <li key={`${item.href}-${i}`} className="rounded-lg">
-                <Link
-                  className="block rounded-md px-3 py-2.5 font-medium text-stone-800 transition-colors hover:bg-stone-200/50 hover:text-stone-950"
-                  href={String(item.href || '#')}
-                  onClick={close}
-                >
-                  {item.label}
-                </Link>
-                {item.children?.length ? (
-                  <ul className="ml-2 border-l border-stone-300/90 py-1 pl-2">
-                    {item.children.map((ch, j) => (
-                      <li key={`${ch.href}-${j}`}>
+              <div
+                id={panelId}
+                className="site-menu-panel z-[110]"
+                role="dialog"
+                aria-modal
+                aria-label="Навигация по сайту"
+              >
+                <div className="flex items-center justify-between border-b border-stone-200/80 px-4 py-3">
+                  <span className="text-sm font-semibold uppercase tracking-wide text-stone-500">Меню</span>
+                  <button
+                    type="button"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-md text-stone-600 transition-colors hover:bg-stone-200/60 hover:text-stone-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800"
+                    aria-label="Закрыть"
+                    onClick={close}
+                  >
+                    <CloseMenuIcon />
+                  </button>
+                </div>
+                <nav className="flex-1 overflow-y-auto overscroll-contain px-2 py-4">
+                  {navItems.length === 0 ? (
+                    <p className="px-3 py-2 text-sm text-stone-500">
+                      Пункты меню настраиваются в админке Payload.
+                    </p>
+                  ) : null}
+                  <ul className="flex flex-col gap-1 text-[15px]">
+                    {navItems.map((item, i) => (
+                      <li key={`${item.href}-${i}`} className="rounded-lg">
                         <Link
-                          className="block rounded-md px-3 py-2 text-stone-600 transition-colors hover:bg-stone-200/40 hover:text-stone-900"
-                          href={String(ch.href || '#')}
+                          className="block rounded-md px-3 py-2.5 font-medium text-stone-800 transition-colors hover:bg-stone-200/50 hover:text-stone-950"
+                          href={String(item.href || '#')}
                           onClick={close}
                         >
-                          {ch.label}
+                          {item.label}
                         </Link>
+                        {item.children?.length ? (
+                          <ul className="ml-2 border-l border-stone-300/90 py-1 pl-2">
+                            {item.children.map((ch, j) => (
+                              <li key={`${ch.href}-${j}`}>
+                                <Link
+                                  className="block rounded-md px-3 py-2 text-stone-600 transition-colors hover:bg-stone-200/40 hover:text-stone-900"
+                                  href={String(ch.href || '#')}
+                                  onClick={close}
+                                >
+                                  {ch.label}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
                       </li>
                     ))}
                   </ul>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </div>
+                </nav>
+              </div>
+            </>,
+            document.body,
+          )
+        : null}
     </>
   )
 }

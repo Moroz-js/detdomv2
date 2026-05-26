@@ -6,6 +6,7 @@ import { getPayload } from 'payload'
 
 import configPromise from '@payload-config'
 import { FormTabsBlock, type FormType } from '@/components/FormTabsBlock'
+import { ImageSlider, type SliderSlide } from '@/components/ImageSlider'
 import { mediaSrc } from '@/lib/media'
 import { cn } from '@/lib/utils'
 
@@ -124,6 +125,24 @@ function headingTextFromContentBlock(block: BlockRendererBlock): string | null {
 type RenderBlockOpts = {
   hideFileListTitle?: boolean
   pageSlug?: string
+  /** 3 — одноколоночный контейнер или страница; 1 — 2+ колонки */
+  slidesPerView?: 1 | 3
+}
+
+function parseSliderSlides(items: unknown[]): SliderSlide[] {
+  const slides: SliderSlide[] = []
+  for (let i = 0; i < items.length; i++) {
+    const slide = items[i]
+    if (!isRecord(slide)) continue
+    const { src, alt } = resolveImageSrc(slide, 'image')
+    if (!src) continue
+    slides.push({
+      src,
+      alt: alt || pickStr(slide.title) || `Слайд ${i + 1}`,
+      href: pickStr(slide.href),
+    })
+  }
+  return slides
 }
 
 function parseFormTabs(block: BlockRendererBlock): FormType[] {
@@ -215,38 +234,16 @@ async function renderBlock(
         </section>
       )
     case 'slider': {
-      const slides = Array.isArray(block.slides) ? block.slides : []
+      const raw = Array.isArray(block.slides) ? block.slides : []
+      const slides = parseSliderSlides(raw)
+      if (!slides.length) return null
       return (
         <section key={key} className="space-y-4">
-          <div className="flex gap-4 overflow-x-auto pb-2">
-            {slides.map((slide, i) => {
-              if (!isRecord(slide)) return null
-              const { src, alt } = resolveImageSrc(slide, 'image')
-              const href = pickStr(slide.href)
-              const slideKey = `${key}-slide-${i}`
-              const card = src ? (
-                <Image
-                  alt={alt || `Слайд ${i + 1}`}
-                  className="h-48 w-72 rounded-lg border border-zinc-200 object-cover shadow-sm"
-                  height={192}
-                  src={src}
-                  unoptimized
-                  width={288}
-                />
-              ) : null
-              return (
-                <div key={slideKey} className="shrink-0">
-                  {href ? (
-                    <Link className="block" href={href}>
-                      {card}
-                    </Link>
-                  ) : (
-                    card
-                  )}
-                </div>
-              )
-            })}
-          </div>
+          <ImageSlider
+            slides={slides}
+            slidesPerView={opts?.slidesPerView ?? 3}
+            variant="card"
+          />
         </section>
       )
     }
@@ -431,44 +428,19 @@ async function renderBlock(
       )
     }
     case 'homeSlider': {
-      const slides = await fetchHomeSliderSlides()
+      const raw = await fetchHomeSliderSlides()
+      const slides = parseSliderSlides(raw)
       if (!slides.length) return null
       return (
         <section key={key} className="space-y-4">
-          <div className="flex gap-4 overflow-x-auto pb-2">
-            {slides.map((slide, i) => {
-              const { src, alt } = resolveImageSrc(slide, 'image')
-              const href = pickStr(slide.href)
-              const slideKey = `${key}-home-${i}`
-              const card = src ? (
-                <Image
-                  alt={alt || pickStr(slide.title) || `Слайд ${i + 1}`}
-                  className="h-64 w-[28rem] rounded-xl border border-zinc-200 object-cover shadow-sm"
-                  height={256}
-                  src={src}
-                  unoptimized
-                  width={448}
-                />
-              ) : null
-              return (
-                <div key={slideKey} className="shrink-0">
-                  {href ? (
-                    <Link className="block" href={href}>
-                      {card}
-                    </Link>
-                  ) : (
-                    card
-                  )}
-                </div>
-              )
-            })}
-          </div>
+          <ImageSlider slides={slides} slidesPerView={3} variant="banner" />
         </section>
       )
     }
     case 'container': {
       const columns = String(block.columns ?? '2')
       const n = Math.min(6, Math.max(1, parseInt(columns, 10) || 2))
+      const containerSlidesPerView: 1 | 3 = n <= 1 ? 3 : 1
       const column1 = normalizeBlocks(block.column1)
       const column2 = n >= 2 ? normalizeBlocks(block.column2) : []
       const column3 = n >= 3 ? normalizeBlocks(block.column3) : []
@@ -503,7 +475,10 @@ async function renderBlock(
                       const innerKey =
                         innerBlock.id ??
                         `${key}-col-${idx}-${JSON.stringify(innerBlock).slice(0, 32)}`
-                      return await renderBlock(innerBlock, String(innerKey), opts)
+                      return await renderBlock(innerBlock, String(innerKey), {
+                        ...opts,
+                        slidesPerView: containerSlidesPerView,
+                      })
                     }),
                   )}
                 </div>
