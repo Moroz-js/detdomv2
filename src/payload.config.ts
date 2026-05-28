@@ -18,6 +18,10 @@ import { HomeSlider } from './globals/HomeSlider.ts'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+const isProduction = process.env.NODE_ENV === 'production'
+const databaseConnectionString = isProduction
+  ? process.env.DATABASE_URL_PROD || process.env.DATABASE_URL || process.env.DATABASE_URI || ''
+  : process.env.DATABASE_URL_LOCAL || ''
 
 export default buildConfig({
   bin: [
@@ -57,7 +61,7 @@ export default buildConfig({
   db: postgresAdapter({
     migrationDir: path.resolve(dirname, 'migrations'),
     pool: {
-      connectionString: process.env.DATABASE_URI || process.env.DATABASE_URL || '',
+      connectionString: databaseConnectionString,
     },
   }),
   sharp,

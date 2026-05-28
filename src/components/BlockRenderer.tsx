@@ -6,6 +6,7 @@ import { getPayload } from 'payload'
 
 import configPromise from '@payload-config'
 import { FormTabsBlock, type FormType } from '@/components/FormTabsBlock'
+import { GosuslugiBanner, isGosuslugiCta } from '@/components/GosuslugiBanner'
 import { ImageSlider, type SliderSlide } from '@/components/ImageSlider'
 import { mediaSrc } from '@/lib/media'
 import { cn } from '@/lib/utils'
@@ -211,7 +212,22 @@ async function renderBlock(
         </section>
       )
     }
-    case 'cta':
+    case 'cta': {
+      const buttonUrl = pickStr(block.buttonUrl)
+      const buttonLabel = pickStr(block.buttonLabel)
+      const text = pickStr(block.text)
+
+      if (isGosuslugiCta(buttonUrl) && buttonLabel && buttonUrl && text) {
+        return (
+          <GosuslugiBanner
+            key={key}
+            buttonLabel={buttonLabel}
+            buttonUrl={buttonUrl}
+            text={text}
+          />
+        )
+      }
+
       return (
         <section
           key={key}
@@ -221,18 +237,19 @@ async function renderBlock(
             <h3 className="text-lg font-semibold text-stone-900">{String(block.title ?? '')}</h3>
             {block.text ? <p className="text-sm leading-relaxed text-stone-600">{String(block.text)}</p> : null}
           </div>
-          {block.buttonUrl && block.buttonLabel ? (
+          {buttonUrl && buttonLabel ? (
             <Link
               className={cn(
                 'mt-4 inline-flex h-10 w-full items-center justify-center rounded-md bg-stone-900 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-stone-800',
               )}
-              href={String(block.buttonUrl)}
+              href={buttonUrl}
             >
-              {String(block.buttonLabel)}
+              {buttonLabel}
             </Link>
           ) : null}
         </section>
       )
+    }
     case 'slider': {
       const raw = Array.isArray(block.slides) ? block.slides : []
       const slides = parseSliderSlides(raw)
