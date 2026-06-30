@@ -191,6 +191,7 @@ chmod 600 "${APP_DIR}/.env"
 
 # ---------- 11. Зависимости и сборка ----------
 log "npm ci && migrate && build"
+chown -R "$DEPLOY_USER:$DEPLOY_USER" "$APP_DIR"
 sudo -u "$DEPLOY_USER" bash -lc "cd '${APP_DIR}' && npm ci && npm run migrate && npm run build"
 
 # ---------- 12. systemd ----------
