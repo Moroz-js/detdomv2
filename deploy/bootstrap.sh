@@ -189,10 +189,10 @@ EOF
 chown "$DEPLOY_USER:$DEPLOY_USER" "${APP_DIR}/.env"
 chmod 600 "${APP_DIR}/.env"
 
-# ---------- 11. Зависимости и сборка ----------
-log "npm ci && migrate && build"
+# ---------- 11. Зависимости и миграции (сборка — в самом конце) ----------
+log "npm ci && migrate"
 chown -R "$DEPLOY_USER:$DEPLOY_USER" "$APP_DIR"
-sudo -u "$DEPLOY_USER" bash -lc "cd '${APP_DIR}' && npm ci && npm run migrate && npm run build"
+sudo -u "$DEPLOY_USER" bash -lc "cd '${APP_DIR}' && npm ci && npm run migrate" </dev/null
 
 # ---------- 12. systemd ----------
 log "systemd unit detdom.service"
@@ -214,8 +214,7 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 systemctl daemon-reload
-systemctl enable --now detdom
-systemctl restart detdom
+systemctl enable detdom   # запустим в самом конце, после сборки
 
 # CI должен иметь право перезапускать сервис и менять домен без пароля
 echo "${DEPLOY_USER} ALL=(root) NOPASSWD: /usr/bin/systemctl restart detdom, /usr/bin/systemctl status detdom, /usr/bin/bash ${APP_DIR}/deploy/setup-domain.sh *" \
@@ -231,6 +230,12 @@ bash "${APP_DIR}/deploy/setup-domain.sh" "$DOMAIN" "$ADMIN_EMAIL"
 ufw allow OpenSSH >/dev/null 2>&1 || true
 ufw allow 'Nginx Full' >/dev/null 2>&1 || true
 yes | ufw enable >/dev/null 2>&1 || true
+
+# ---------- 15. Сборка и запуск (в самом конце) ----------
+log "Сборка (next build) и запуск сервиса"
+chown -R "$DEPLOY_USER:$DEPLOY_USER" "$APP_DIR"
+sudo -u "$DEPLOY_USER" bash -lc "cd '${APP_DIR}' && npm run build" </dev/null
+systemctl restart detdom
 
 # ---------- Готово ----------
 echo -e "\n\033[1;32mГотово.\033[0m\n"
