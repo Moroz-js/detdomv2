@@ -143,7 +143,11 @@ HAS_NEWS="$(PGPASSWORD="$DB_PASSWORD" psql "$LOCAL_DB_URL" -tAc "SELECT to_regcl
 if [ "$HAS_NEWS" != "news" ] || [ "$FORCE_DUMP" = "1" ]; then
   log "Заливаю дамп из Neon и переписываю URL медиа на /media"
   DUMP="/tmp/neon-$(date +%F-%H%M).sql"
-  pg_dump "$NEON_URL" --no-owner --no-acl --clean --if-exists -F p -f "$DUMP"
+  # libpq/pg_dump не понимает кастомные параметры (например uselibpqcompat) — вырезаем
+  NEON_URL_CLEAN="$(printf '%s' "$NEON_URL" \
+    | sed -E 's/(&)?uselibpqcompat=[^&]*//g' \
+    | sed -E 's/\?&/?/; s/&&/\&/g; s/[?&]$//')"
+  pg_dump "$NEON_URL_CLEAN" --no-owner --no-acl --clean --if-exists -F p -f "$DUMP"
   sed -i -E 's#https?://detskiydomuss\.ru/wp-content/uploads#/media#g' "$DUMP"
   PGPASSWORD="$DB_PASSWORD" psql "$LOCAL_DB_URL" -v ON_ERROR_STOP=0 -f "$DUMP"
   rm -f "$DUMP"
