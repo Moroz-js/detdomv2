@@ -45,7 +45,9 @@ jobs:
             rm -rf node_modules 2>/dev/null || find node_modules -mindepth 1 -delete 2>/dev/null || true
             npm ci
 
-            echo "==> Миграции Payload (неинтерактивно)"
+            echo "==> Миграции Payload (схема из дампа — отметить + только новые)"
+            DB_URL="$(grep ^DATABASE_URL= .env | cut -d= -f2-)"
+            psql "$DB_URL" -v ON_ERROR_STOP=1 -f deploy/mark-migrations.sql
             printf 'y\n' | npm run migrate
 
             echo "==> Сборка"

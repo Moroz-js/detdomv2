@@ -199,6 +199,13 @@ if [ -f "${APP_DIR}/deploy/fix-theme-urls.sql" ]; then
     -f "${APP_DIR}/deploy/fix-theme-urls.sql" </dev/null
 fi
 
+# ---------- 9c. Отметить миграции (схема уже в дампе, migrate не гоняем) ----------
+if [ -f "${APP_DIR}/deploy/mark-migrations.sql" ]; then
+  log "Отмечаю применённые миграции Payload"
+  PGPASSWORD="$DB_PASSWORD" psql "$LOCAL_DB_URL" -v ON_ERROR_STOP=1 \
+    -f "${APP_DIR}/deploy/mark-migrations.sql" </dev/null
+fi
+
 # ---------- 10. .env ----------
 log "Файл .env"
 cat > "${APP_DIR}/.env" <<EOF

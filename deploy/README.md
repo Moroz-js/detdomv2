@@ -42,6 +42,10 @@ curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/main/deploy/bootstra
 
 Перезалить дамп:  `FORCE_DUMP=1 sudo -E bash` (или `sudo FORCE_DUMP=1 bash`).
 
+Схема БД приходит из дампа Neon — `payload migrate` в bootstrap **не** гоняется.
+После дампа проставляются записи в `payload_migrations` (`deploy/mark-migrations.sql`).
+CI делает то же самое, затем migrate — применит **только новые** миграции, если добавишь.
+
 ## 3. Заливка медиа с локальной машины
 
 ```bash
