@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   workflow_dispatch:
 
 concurrency:
@@ -29,7 +29,7 @@ jobs:
 
             echo "==> Подтягиваю код"
             git fetch --all --prune
-            git reset --hard origin/main
+            git reset --hard origin/master
 
             echo "==> NEXT_PUBLIC_SITE_URL в .env"
             if grep -q '^NEXT_PUBLIC_SITE_URL=' .env; then

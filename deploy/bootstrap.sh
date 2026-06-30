@@ -130,7 +130,10 @@ if [ ! -d "${APP_DIR}/.git" ]; then
   fi
 else
   sudo -u "$DEPLOY_USER" git -C "$APP_DIR" fetch --all --prune
-  sudo -u "$DEPLOY_USER" git -C "$APP_DIR" reset --hard origin/main
+  BRANCH="$(sudo -u "$DEPLOY_USER" git -C "$APP_DIR" remote show origin \
+    | sed -n 's/.*HEAD branch: //p')"
+  BRANCH="${BRANCH:-master}"
+  sudo -u "$DEPLOY_USER" git -C "$APP_DIR" reset --hard "origin/${BRANCH}"
 fi
 
 # ---------- 8. Папка media (не перезаписывать существующие файлы) ----------
