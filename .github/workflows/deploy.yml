@@ -40,6 +40,9 @@ jobs:
             fi
 
             echo "==> Зависимости"
+            sudo systemctl stop detdom 2>/dev/null || true
+            sleep 1
+            rm -rf node_modules 2>/dev/null || find node_modules -mindepth 1 -delete 2>/dev/null || true
             npm ci
 
             echo "==> Миграции Payload (неинтерактивно)"

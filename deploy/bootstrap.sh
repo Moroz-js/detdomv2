@@ -189,9 +189,20 @@ EOF
 chown "$DEPLOY_USER:$DEPLOY_USER" "${APP_DIR}/.env"
 chmod 600 "${APP_DIR}/.env"
 
+clean_node_modules() {
+  systemctl stop detdom 2>/dev/null || true
+  sleep 1
+  if [ ! -d "${APP_DIR}/node_modules" ]; then return 0; fi
+  rm -rf "${APP_DIR}/node_modules" 2>/dev/null \
+    || find "${APP_DIR}/node_modules" -mindepth 1 -delete 2>/dev/null \
+    || rm -rf "${APP_DIR}/node_modules" 2>/dev/null \
+    || true
+  [ ! -d "${APP_DIR}/node_modules" ] || find "${APP_DIR}/node_modules" -delete 2>/dev/null || true
+}
+
 # ---------- 11. Зависимости (сборка — в самом конце) ----------
 log "npm ci"
-rm -rf "${APP_DIR}/node_modules"   # чистим возможные остатки с прошлых запусков
+clean_node_modules
 chown -R "$DEPLOY_USER:$DEPLOY_USER" "$APP_DIR"
 sudo -u "$DEPLOY_USER" bash -lc "cd '${APP_DIR}' && npm ci" </dev/null
 # migrate не гоняем: схема уже в дампе Neon. Повторный migrate спрашивает y/N и висит без TTY.
