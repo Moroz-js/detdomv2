@@ -42,8 +42,8 @@ jobs:
             echo "==> Зависимости"
             npm ci
 
-            echo "==> Миграции Payload"
-            npm run migrate
+            echo "==> Миграции Payload (неинтерактивно)"
+            printf 'y\n' | npm run migrate
 
             echo "==> Сборка"
             npm run build
