@@ -21,7 +21,7 @@ DB_NAME="detdom"
 DB_USER="detdom"
 PG_VERSION="17"          # локальный сервер БД
 DUMP_PG_VERSION="18"     # клиент pg_dump для Neon (должен быть >= версии Neon)
-NODE_MAJOR="20"
+NODE_MAJOR="22"          # Node 22 умеет .ts нативно (payload --disable-transpile)
 DEFAULT_SITE_URL="https://staging.detskiydomuss.ru"
 
 PG_BIN="/usr/lib/postgresql/${PG_VERSION}/bin"
