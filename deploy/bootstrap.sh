@@ -76,6 +76,16 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get install -y curl ca-certificates gnupg lsb-release git ufw openssl
 
+# ---------- 1.1 Swap (next build тяжёлый, на VPS < 2 ГБ ловит OOM) ----------
+if [ -z "$(swapon --show)" ] && [ ! -f /swapfile ]; then
+  log "Создаю swap 2G"
+  fallocate -l 2G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=2048
+  chmod 600 /swapfile
+  mkswap /swapfile
+  swapon /swapfile
+  grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fi
+
 # ---------- 2. Node.js ----------
 if ! command -v node >/dev/null || [ "$(node -v | cut -c2-3)" -lt "$NODE_MAJOR" ]; then
   log "Node.js ${NODE_MAJOR}.x"

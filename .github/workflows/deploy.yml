@@ -28,6 +28,7 @@ jobs:
             cd /var/www/detdom
 
             echo "==> Подтягиваю код"
+            git config --global --add safe.directory /var/www/detdom
             git fetch --all --prune
             git reset --hard origin/master
 
@@ -46,6 +47,9 @@ jobs:
 
             echo "==> Сборка"
             npm run build
+
+            echo "==> Возврат владельца файлов сервису"
+            chown -R detdom:detdom /var/www/detdom
 
             echo "==> Проверка домена (nginx + SSL)"
             DOMAIN="$(printf '%s' "$SITE_URL" | sed -E 's#^https?://##; s#/.*$##; s#:.*$##')"
