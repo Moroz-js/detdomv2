@@ -70,6 +70,23 @@ ask ADMIN_EMAIL "Email для Let's Encrypt" "admin@${DOMAIN}"
 
 LOCAL_DB_URL="postgresql://${DB_USER}:${DB_PASSWORD}@localhost:5432/${DB_NAME}"
 
+wait_for_apt() {
+  local waited=0 max=600
+  while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 \
+     || fuser /var/lib/apt/lists/lock >/dev/null 2>&1 \
+     || fuser /var/lib/dpkg/lock >/dev/null 2>&1; do
+    if [ "$waited" -eq 0 ]; then
+      echo "    жду освобождения apt (часто unattended-upgrades)…"
+    fi
+    sleep 5
+    waited=$((waited + 5))
+    if [ "$waited" -ge "$max" ]; then
+      echo "    !!! apt lock не освободился за ${max}s — дождись обновлений и перезапусти скрипт."
+      exit 1
+    fi
+  done
+}
+
 # ---------- 1. Пакеты ----------
 log "Базовые пакеты"
 export DEBIAN_FRONTEND=noninteractive
@@ -168,10 +185,18 @@ if [ "$HAS_NEWS" != "news" ] || [ "$FORCE_DUMP" = "1" ]; then
     | sed -E 's/\?&/?/; s/&&/\&/g; s/[?&]$//')"
   "$PGDUMP" "$NEON_URL_CLEAN" --no-owner --no-acl --clean --if-exists -F p -f "$DUMP"
   sed -i -E 's#https?://detskiydomuss\.ru/wp-content/uploads#/media#g' "$DUMP"
+  sed -i -E 's#https?://detskiydomuss\.ru/wp-content/themes/detdom#/media#g' "$DUMP"
   PGPASSWORD="$DB_PASSWORD" psql "$LOCAL_DB_URL" -v ON_ERROR_STOP=0 -f "$DUMP"
   rm -f "$DUMP"
 else
   echo "    Таблица news уже есть — пропускаю дамп (FORCE_DUMP=1 чтобы перезалить)."
+fi
+
+# ---------- 9b. Theme URL в уже залитой БД (если дамп пропустили) ----------
+if [ -f "${APP_DIR}/deploy/fix-theme-urls.sql" ]; then
+  log "URL темы WP (themes/detdom) → /media"
+  PGPASSWORD="$DB_PASSWORD" psql "$LOCAL_DB_URL" -v ON_ERROR_STOP=1 \
+    -f "${APP_DIR}/deploy/fix-theme-urls.sql" </dev/null
 fi
 
 # ---------- 10. .env ----------
@@ -236,6 +261,7 @@ chmod 440 /etc/sudoers.d/detdom
 
 # ---------- 13. nginx + SSL ----------
 log "nginx + SSL для ${DOMAIN}"
+wait_for_apt
 apt-get install -y nginx certbot python3-certbot-nginx
 bash "${APP_DIR}/deploy/setup-domain.sh" "$DOMAIN" "$ADMIN_EMAIL"
 

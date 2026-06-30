@@ -37,8 +37,8 @@ curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/main/deploy/bootstra
 Что делает: ставит Node 20, PostgreSQL 17 (PGDG), создаёт пользователя/базу,
 генерирует deploy-key для GitHub (если клон приватного репо упадёт — покажет ключ,
 добавь в **Deploy keys** и перезапусти), создаёт `media/` (существующие файлы не
-трогает), делает `pg_dump` из Neon с заменой `…/wp-content/uploads` → `/media`,
-пишет `.env`, билдит и поднимает systemd-сервис `detdom`.
+трогает), делает `pg_dump` из Neon с заменой `…/wp-content/uploads` → `/media`
+и `…/wp-content/themes/detdom` → `/media`, пишет `.env`, билдит и поднимает systemd-сервис `detdom`.
 
 Перезалить дамп:  `FORCE_DUMP=1 sudo -E bash` (или `sudo FORCE_DUMP=1 bash`).
 
@@ -53,8 +53,28 @@ npm run deploy:media
 (файлы того же размера пропускает), прогресс-бар и проверка, что `/media/...`,
 `/`, `/news`, `/documents` отвечают 200.
 
-> Существующие PDF Payload (приказы по медиации) тоже положи в `LOCAL_MEDIA_DIR`
-> или скопируй вручную в `media/` — иначе документы отвалятся.
+Структура `LOCAL_MEDIA_DIR`:
+
+```
+uploads/
+  2020/, 2024/, …     ← wp-content/uploads
+  documents/          ← из wp-content/themes/detdom/documents/
+  assets/img/         ← из wp-content/themes/detdom/assets/img/
+```
+
+Bootstrap при дампе переписывает URL:
+- `…/wp-content/uploads/…` → `/media/…`
+- `…/wp-content/themes/detdom/…` → `/media/…` (префикс темы отрезается)
+
+Если дамп уже залит без второй замены — `deploy/fix-theme-urls.sql` прогонится
+автоматически при bootstrap, или вручную:
+
+```bash
+sudo -u postgres psql detdom -f /var/www/detdom/deploy/fix-theme-urls.sql
+```
+
+> PDF медиации (`/assets/documents/…` в БД) — положи в `uploads/assets/documents/`
+> и перепиши URL отдельно (пока не в bootstrap).
 
 ## 4. Дальнейшие деплои
 

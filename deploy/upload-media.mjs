@@ -1,26 +1,18 @@
 /* eslint-disable no-console */
 /**
- * Локальная заливка папки uploads (с WP) в папку media на сервере по SFTP.
+ * Локальная заливка папки uploads в /var/www/detdom/media по SFTP.
  *
  *   npm run deploy:media
  *
- * Конфиг берётся из переменных окружения или из файла deploy/.env.deploy:
+ * Структура LOCAL_MEDIA_DIR (всё заливается рекурсивно):
+ *   2020/, 2024/, …           — wp-content/uploads (новости, галереи)
+ *   documents/                — PDF/DOCX из themes/detdom/documents/
+ *   assets/img/               — картинки из themes/detdom/assets/img/
  *
- *   DEPLOY_SSH_HOST=1.2.3.4
- *   DEPLOY_SSH_USER=detdom
- *   DEPLOY_SSH_PORT=22
- *   DEPLOY_SSH_KEY=C:\Users\lisof\.ssh\detdom_ed25519
- *   DEPLOY_SSH_PASSPHRASE=            # если ключ с паролем
- *   LOCAL_MEDIA_DIR=C:\путь\к\wp-content\uploads
- *   REMOTE_MEDIA_DIR=/var/www/detdom/media
- *   SITE_URL=https://example.ru
+ * URL в БД после bootstrap: …/wp-content/themes/detdom/documents/x.pdf → /media/documents/x.pdf
  *
- * Что делает:
- *   1) рекурсивно заливает файлы, существующие с тем же размером — пропускает
- *      (повторный запуск инкрементальный, ничего не перезаписывает зря);
- *   2) показывает прогресс-бар;
- *   3) после заливки проверяет, что новые URL отвечают 200 и что ключевые
- *      страницы (/, /news, /documents) и образцы медиа реально работают.
+ * Конфиг: deploy/.env.deploy или переменные окружения.
+ *   DEPLOY_CONCURRENCY=8   — параллельных SFTP-сессий (по умолчанию 8)
  */
 
 import fs from 'node:fs'
@@ -30,7 +22,6 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-// ---------- ssh2 ----------
 let Client
 try {
   ;({ Client } = await import('ssh2'))
@@ -39,7 +30,6 @@ try {
   process.exit(1)
 }
 
-// ---------- конфиг ----------
 function loadEnvFile(file) {
   if (!fs.existsSync(file)) return
   for (const raw of fs.readFileSync(file, 'utf8').split('\n')) {
@@ -54,8 +44,8 @@ function loadEnvFile(file) {
 }
 loadEnvFile(path.join(__dirname, '.env.deploy'))
 
-// Папка на сервере захардкожена — совпадает с bootstrap.sh и nginx.
 const REMOTE_MEDIA_DIR = '/var/www/detdom/media'
+const CONCURRENCY = Math.max(1, Math.min(16, Number(process.env.DEPLOY_CONCURRENCY || 8)))
 
 const cfg = {
   host: process.env.DEPLOY_SSH_HOST,
@@ -75,7 +65,6 @@ if (!cfg.keyPath) missing.push('DEPLOY_SSH_KEY')
 if (!cfg.localDir) missing.push('LOCAL_MEDIA_DIR')
 if (missing.length) {
   console.error('Не заданы переменные: ' + missing.join(', '))
-  console.error('Создай deploy/.env.deploy (см. шапку файла) или экспортируй их.')
   process.exit(1)
 }
 if (!fs.existsSync(cfg.localDir)) {
@@ -84,12 +73,8 @@ if (!fs.existsSync(cfg.localDir)) {
 }
 
 const keyFile = cfg.keyPath.replace(/^~(?=$|[/\\])/, os.homedir())
-if (!fs.existsSync(keyFile)) {
-  console.error(`Приватный ключ не найден: ${keyFile}`)
-  process.exit(1)
-}
+const privateKey = fs.readFileSync(keyFile)
 
-// ---------- утилиты ----------
 const C = {
   reset: '\x1b[0m',
   dim: '\x1b[2m',
@@ -104,10 +89,11 @@ function walk(dir, base = dir, out = []) {
     const full = path.join(dir, entry.name)
     if (entry.isDirectory()) walk(full, base, out)
     else if (entry.isFile()) {
+      const st = fs.statSync(full)
       out.push({
         local: full,
         rel: path.relative(base, full).split(path.sep).join('/'),
-        size: fs.statSync(full).size,
+        size: st.size,
       })
     }
   }
@@ -124,17 +110,6 @@ function fmtBytes(n) {
   return `${n.toFixed(i ? 1 : 0)} ${u[i]}`
 }
 
-function renderBar(done, total, label) {
-  const width = 28
-  const ratio = total ? done / total : 0
-  const filled = Math.round(ratio * width)
-  const bar = '#'.repeat(filled) + '-'.repeat(width - filled)
-  const pct = String(Math.round(ratio * 100)).padStart(3)
-  const line = `\r[${bar}] ${pct}% ${label}`
-  process.stdout.write(line.padEnd((process.stdout.columns || 80) - 1).slice(0, (process.stdout.columns || 80) - 1))
-}
-
-// ---------- ssh2 промис-обёртки ----------
 function connect() {
   return new Promise((resolve, reject) => {
     const conn = new Client()
@@ -145,7 +120,7 @@ function connect() {
         host: cfg.host,
         port: cfg.port,
         username: cfg.username,
-        privateKey: fs.readFileSync(keyFile),
+        privateKey,
         passphrase: cfg.passphrase,
         readyTimeout: 20000,
       })
@@ -158,31 +133,107 @@ function getSftp(conn) {
   )
 }
 
-function sftpStat(sftp, p) {
-  return new Promise((resolve) => sftp.stat(p, (err, st) => resolve(err ? null : st)))
+function exec(conn, cmd) {
+  return new Promise((resolve, reject) => {
+    conn.exec(cmd, (err, stream) => {
+      if (err) return reject(err)
+      let out = ''
+      let errOut = ''
+      stream.on('data', (d) => {
+        out += d
+      })
+      stream.stderr.on('data', (d) => {
+        errOut += d
+      })
+      stream.on('close', (code) => {
+        if (code === 0) resolve(out)
+        else reject(new Error(errOut.trim() || `exit ${code}`))
+      })
+    })
+  })
 }
 
 function sftpMkdir(sftp, p) {
   return new Promise((resolve) => sftp.mkdir(p, () => resolve()))
 }
 
-async function ensureRemoteDir(sftp, dir, cache) {
-  if (dir === '.' || dir === '/' || cache.has(dir)) return
-  const parent = dir.split('/').slice(0, -1).join('/')
-  if (parent) await ensureRemoteDir(sftp, parent, cache)
-  await sftpMkdir(sftp, dir)
-  cache.add(dir)
-}
-
-function sftpPut(sftp, local, remote, onChunk) {
+function sftpPut(sftp, local, remote) {
   return new Promise((resolve, reject) => {
-    sftp.fastPut(local, remote, { step: (transferred) => onChunk(transferred) }, (err) =>
-      err ? reject(err) : resolve(),
-    )
+    sftp.fastPut(local, remote, (err) => (err ? reject(err) : resolve()))
   })
 }
 
-// ---------- recheck ----------
+/** Один find на сервере вместо тысяч stat по SFTP. */
+async function fetchRemoteIndex(conn) {
+  const map = new Map()
+  try {
+    const out = await exec(
+      conn,
+      `find ${cfg.remoteDir} -type f -printf '%s\\t%P\\n' 2>/dev/null || true`,
+    )
+    for (const line of out.split('\n')) {
+      if (!line.trim()) continue
+      const tab = line.indexOf('\t')
+      if (tab === -1) continue
+      const size = Number(line.slice(0, tab))
+      const rel = line.slice(tab + 1)
+      if (!Number.isNaN(size) && rel) map.set(rel, size)
+    }
+  } catch {
+    // пустая media/ — нормально
+  }
+  return map
+}
+
+function collectRemoteDirs(files) {
+  const dirs = new Set([cfg.remoteDir])
+  for (const f of files) {
+    const parts = f.rel.split('/')
+    parts.pop()
+    let cur = cfg.remoteDir
+    for (const part of parts) {
+      cur = `${cur}/${part}`
+      dirs.add(cur)
+    }
+  }
+  return [...dirs].sort((a, b) => a.split('/').length - b.split('/').length)
+}
+
+async function ensureAllDirs(sftp, dirs) {
+  for (const d of dirs) {
+    await sftpMkdir(sftp, d)
+  }
+}
+
+function makeProgress(totalBytes) {
+  let doneBytes = 0
+  let currentLabel = ''
+  let lastRender = 0
+  return {
+    add(bytes, label) {
+      doneBytes += bytes
+      if (label) currentLabel = label
+    },
+    tick(label) {
+      if (label) currentLabel = label
+      const now = Date.now()
+      if (now - lastRender < 120) return
+      lastRender = now
+      const width = 28
+      const ratio = totalBytes ? doneBytes / totalBytes : 0
+      const filled = Math.round(ratio * width)
+      const bar = '#'.repeat(filled) + '-'.repeat(width - filled)
+      const pct = String(Math.round(ratio * 100)).padStart(3)
+      const line = `\r[${bar}] ${pct}% ${fmtBytes(doneBytes)}/${fmtBytes(totalBytes)} ${currentLabel}`
+      const cols = process.stdout.columns || 100
+      process.stdout.write(line.padEnd(cols - 1).slice(0, cols - 1))
+    },
+    finish() {
+      process.stdout.write('\n')
+    },
+  }
+}
+
 async function head(url) {
   try {
     let res = await fetch(url, { method: 'HEAD', redirect: 'follow' })
@@ -197,84 +248,150 @@ async function head(url) {
 
 function sample(arr, n) {
   if (arr.length <= n) return arr
-  const step = Math.floor(arr.length / n)
+  const step = Math.max(1, Math.floor(arr.length / n))
   const out = []
   for (let i = 0; i < arr.length && out.length < n; i += step) out.push(arr[i])
   return out
 }
 
-// ---------- main ----------
+/** Статистика по «теме» (documents/, assets/) vs годам uploads. */
+function summarize(files) {
+  let themeDocs = 0
+  let themeAssets = 0
+  let uploads = 0
+  for (const f of files) {
+    if (f.rel.startsWith('documents/')) themeDocs++
+    else if (f.rel.startsWith('assets/')) themeAssets++
+    else if (/^\d{4}\//.test(f.rel)) uploads++
+  }
+  return { themeDocs, themeAssets, uploads }
+}
+
+function themeSamples(files, n = 4) {
+  const theme = files.filter(
+    (f) => f.rel.startsWith('documents/') || f.rel.startsWith('assets/'),
+  )
+  return sample(theme, n)
+}
+
 async function main() {
   console.log(`${C.cyan}Источник:${C.reset} ${cfg.localDir}`)
-  console.log(`${C.cyan}Сервер:  ${C.reset} ${cfg.username}@${cfg.host}:${cfg.remoteDir}\n`)
+  console.log(`${C.cyan}Сервер:  ${C.reset} ${cfg.username}@${cfg.host}:${cfg.remoteDir}`)
+  console.log(`${C.cyan}Потоков: ${C.reset} ${CONCURRENCY}\n`)
 
-  console.log('Сканирую файлы…')
+  console.log('Сканирую локальные файлы…')
   const files = walk(cfg.localDir)
   const totalBytes = files.reduce((s, f) => s + f.size, 0)
-  console.log(`Найдено ${files.length} файлов, ${fmtBytes(totalBytes)}\n`)
+  const { themeDocs, themeAssets, uploads } = summarize(files)
+  console.log(`Найдено ${files.length} файлов, ${fmtBytes(totalBytes)}`)
+  console.log(
+    `  uploads (год/…): ${uploads}, тема documents/: ${themeDocs}, тема assets/: ${themeAssets}`,
+  )
+  if (themeDocs === 0 && themeAssets === 0) {
+    console.log(
+      `${C.yellow}  Подсказка:${C.reset} положи в uploads/ папки documents/ и assets/img/ из themes/detdom`,
+    )
+  }
+
   if (!files.length) {
     console.log('Нечего заливать.')
     return
   }
 
-  const conn = await connect()
-  const sftp = await getSftp(conn)
-  const dirCache = new Set()
-  await ensureRemoteDir(sftp, cfg.remoteDir, new Set())
+  const mainConn = await connect()
+  console.log('Индекс файлов на сервере…')
+  const remoteIndex = await fetchRemoteIndex(mainConn)
 
-  let uploaded = 0
+  const toUpload = []
   let skipped = 0
-  let doneBytes = 0
-  let baseBytes = 0
-
-  for (let i = 0; i < files.length; i++) {
-    const f = files[i]
-    const remote = `${cfg.remoteDir}/${f.rel}`
-    const remoteParent = remote.split('/').slice(0, -1).join('/')
-    await ensureRemoteDir(sftp, remoteParent, dirCache)
-
-    const st = await sftpStat(sftp, remote)
-    if (st && st.size === f.size) {
+  let skippedBytes = 0
+  for (const f of files) {
+    const remoteSize = remoteIndex.get(f.rel)
+    if (remoteSize === f.size) {
       skipped++
-      doneBytes += f.size
-      baseBytes = doneBytes
-      renderBar(doneBytes, totalBytes, `${C.dim}skip${C.reset} ${f.rel}`)
+      skippedBytes += f.size
       continue
     }
-
-    baseBytes = doneBytes
-    await sftpPut(sftp, f.local, remote, (transferred) => {
-      renderBar(baseBytes + transferred, totalBytes, `${f.rel}`)
-    })
-    uploaded++
-    doneBytes = baseBytes + f.size
-    renderBar(doneBytes, totalBytes, `${f.rel}`)
+    toUpload.push(f)
   }
+  console.log(
+    `К загрузке: ${toUpload.length} (${fmtBytes(totalBytes - skippedBytes)}), пропуск: ${skipped}\n`,
+  )
 
-  process.stdout.write('\n\n')
-  conn.end()
-  console.log(`${C.green}Заливка завершена${C.reset}: загружено ${uploaded}, пропущено ${skipped}.\n`)
-
-  // ---------- recheck ----------
-  if (!cfg.siteUrl) {
-    console.log(`${C.yellow}SITE_URL не задан — пропускаю проверку доступности.${C.reset}`)
+  if (!toUpload.length) {
+    console.log(`${C.green}Всё уже на сервере.${C.reset}`)
+    mainConn.end()
     return
   }
 
-  console.log(`${C.cyan}Проверяю доступность (${cfg.siteUrl})…${C.reset}`)
-  const mediaSample = sample(
-    files.filter((f) => /\.(jpe?g|png|webp|gif|svg|pdf|docx?|xlsx?)$/i.test(f.rel)),
-    8,
-  )
+  const sftpMain = await getSftp(mainConn)
+  console.log('Создаю каталоги…')
+  await ensureAllDirs(sftpMain, collectRemoteDirs(toUpload))
 
-  const checks = []
-  for (const f of mediaSample) {
-    const url = `${cfg.siteUrl}/media/${f.rel.split('/').map(encodeURIComponent).join('/')}`
-    checks.push({ label: `media/${f.rel}`, status: await head(url) })
+  const progress = makeProgress(totalBytes)
+  progress.add(skippedBytes, `${C.dim}skip${C.reset}`)
+
+  let uploaded = 0
+  let nextIdx = 0
+  let uploadError = null
+
+  async function worker(workerId) {
+    const conn = workerId === 0 ? mainConn : await connect()
+    const sftp = workerId === 0 ? sftpMain : await getSftp(conn)
+    try {
+      while (true) {
+        const i = nextIdx++
+        if (i >= toUpload.length) break
+        const f = toUpload[i]
+        const remote = `${cfg.remoteDir}/${f.rel}`
+        progress.tick(f.rel)
+        await sftpPut(sftp, f.local, remote)
+        uploaded++
+        progress.add(f.size)
+        progress.tick(f.rel)
+      }
+    } catch (e) {
+      uploadError = e
+    } finally {
+      if (workerId !== 0) conn.end()
+    }
   }
-  for (const p of ['/', '/news', '/documents']) {
-    checks.push({ label: `страница ${p}`, status: await head(`${cfg.siteUrl}${p}`) })
-  }
+
+  const t0 = Date.now()
+  await Promise.all(Array.from({ length: CONCURRENCY }, (_, i) => worker(i)))
+  progress.finish()
+
+  if (uploadError) throw uploadError
+
+  console.log(`\n${C.green}Заливка завершена${C.reset}: ${uploaded} файлов за ${((Date.now() - t0) / 1000).toFixed(0)}s, пропущено ${skipped}.`)
+
+  await exec(mainConn, `chown -R detdom:detdom ${cfg.remoteDir}`)
+  mainConn.end()
+
+  if (!cfg.siteUrl) return
+
+  console.log(`\n${C.cyan}Проверяю доступность…${C.reset}`)
+  const mediaSample = [
+    ...themeSamples(files, 4),
+    ...sample(
+      files.filter(
+        (f) =>
+          /^\d{4}\//.test(f.rel) &&
+          /\.(jpe?g|png|webp|gif|svg|pdf|docx?|xlsx?)$/i.test(f.rel),
+      ),
+      4,
+    ),
+  ].slice(0, 8)
+  const checks = await Promise.all([
+    ...mediaSample.map(async (f) => ({
+      label: `media/${f.rel}`,
+      status: await head(`${cfg.siteUrl}/media/${f.rel.split('/').map(encodeURIComponent).join('/')}`),
+    })),
+    ...['/', '/news', '/documents'].map(async (p) => ({
+      label: `страница ${p}`,
+      status: await head(`${cfg.siteUrl}${p}`),
+    })),
+  ])
 
   let ok = 0
   for (const c of checks) {
@@ -283,15 +400,8 @@ async function main() {
     const mark = good ? `${C.green}OK${C.reset}` : `${C.red}FAIL${C.reset}`
     console.log(`  [${mark}] ${String(c.status).padEnd(6)} ${c.label}`)
   }
-
-  console.log(`\n${ok === checks.length ? C.green : C.yellow}Проверки: ${ok}/${checks.length} успешно.${C.reset}`)
-  if (ok !== checks.length) {
-    console.log(
-      `${C.dim}Если media отдаёт не 200 — проверь nginx location /media/ и что дамп переписал URL на /media. ` +
-        `Если страницы не 200 — проверь сервис detdom и сертификат.${C.reset}`,
-    )
-    process.exitCode = 1
-  }
+  console.log(`\n${ok === checks.length ? C.green : C.yellow}Проверки: ${ok}/${checks.length}.${C.reset}`)
+  if (ok !== checks.length) process.exitCode = 1
 }
 
 main().catch((e) => {
