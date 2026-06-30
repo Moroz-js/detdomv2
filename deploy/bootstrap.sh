@@ -19,11 +19,13 @@ APP_DIR="/var/www/detdom"
 MEDIA_DIR="${APP_DIR}/media"
 DB_NAME="detdom"
 DB_USER="detdom"
-PG_VERSION="17"
+PG_VERSION="17"          # локальный сервер БД
+DUMP_PG_VERSION="18"     # клиент pg_dump для Neon (должен быть >= версии Neon)
 NODE_MAJOR="20"
 DEFAULT_SITE_URL="https://staging.detskiydomuss.ru"
 
 PG_BIN="/usr/lib/postgresql/${PG_VERSION}/bin"
+PGDUMP="/usr/lib/postgresql/${DUMP_PG_VERSION}/bin/pg_dump"
 export PATH="$PG_BIN:$PATH"
 FORCE_DUMP="${FORCE_DUMP:-0}"
 
@@ -77,16 +79,16 @@ if ! command -v node >/dev/null || [ "$(node -v | cut -c2-3)" -lt "$NODE_MAJOR" 
   apt-get install -y nodejs
 fi
 
-# ---------- 3. PostgreSQL ${PG_VERSION} (PGDG) ----------
-if ! command -v "${PG_BIN}/pg_dump" >/dev/null 2>&1; then
-  log "PostgreSQL ${PG_VERSION} из PGDG"
+# ---------- 3. PostgreSQL (PGDG): сервер ${PG_VERSION} + клиент ${DUMP_PG_VERSION} ----------
+if [ ! -x "${PG_BIN}/psql" ] || [ ! -x "$PGDUMP" ]; then
+  log "PostgreSQL ${PG_VERSION} (сервер) + client ${DUMP_PG_VERSION} из PGDG"
   install -d /usr/share/postgresql-common/pgdg
   curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
     | gpg --dearmor -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg
   echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
     > /etc/apt/sources.list.d/pgdg.list
   apt-get update -y
-  apt-get install -y "postgresql-${PG_VERSION}"
+  apt-get install -y "postgresql-${PG_VERSION}" "postgresql-client-${DUMP_PG_VERSION}"
 fi
 systemctl enable --now postgresql
 
@@ -150,7 +152,7 @@ if [ "$HAS_NEWS" != "news" ] || [ "$FORCE_DUMP" = "1" ]; then
   NEON_URL_CLEAN="$(printf '%s' "$NEON_URL" \
     | sed -E 's/(&)?uselibpqcompat=[^&]*//g' \
     | sed -E 's/\?&/?/; s/&&/\&/g; s/[?&]$//')"
-  pg_dump "$NEON_URL_CLEAN" --no-owner --no-acl --clean --if-exists -F p -f "$DUMP"
+  "$PGDUMP" "$NEON_URL_CLEAN" --no-owner --no-acl --clean --if-exists -F p -f "$DUMP"
   sed -i -E 's#https?://detskiydomuss\.ru/wp-content/uploads#/media#g' "$DUMP"
   PGPASSWORD="$DB_PASSWORD" psql "$LOCAL_DB_URL" -v ON_ERROR_STOP=0 -f "$DUMP"
   rm -f "$DUMP"

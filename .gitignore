@@ -43,7 +43,7 @@ yarn-error.log*
 
 # Payload uploads (на сервере и при миграции — отдельно от git)
 /media/
-
+/uploads
 # vercel
 .vercel
 
