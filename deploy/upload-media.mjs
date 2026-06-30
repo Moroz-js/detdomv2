@@ -12,7 +12,9 @@
  * URL в БД после bootstrap: …/wp-content/themes/detdom/documents/x.pdf → /media/documents/x.pdf
  *
  * Конфиг: deploy/.env.deploy или переменные окружения.
- *   DEPLOY_CONCURRENCY=8   — параллельных SFTP-сессий (по умолчанию 8)
+ *   DEPLOY_CONCURRENCY=4   — параллельных SFTP-сессий (по умолчанию 4)
+ *   DEPLOY_SSH_TIMEOUT=60000 — таймаут handshake, мс
+ *   DEPLOY_SSH_RETRIES=5   — повторы подключения
  */
 
 import fs from 'node:fs'
@@ -45,7 +47,11 @@ function loadEnvFile(file) {
 loadEnvFile(path.join(__dirname, '.env.deploy'))
 
 const REMOTE_MEDIA_DIR = '/var/www/detdom/media'
-const CONCURRENCY = Math.max(1, Math.min(16, Number(process.env.DEPLOY_CONCURRENCY || 8)))
+const CONCURRENCY = Math.max(1, Math.min(8, Number(process.env.DEPLOY_CONCURRENCY || 4)))
+const SSH_READY_TIMEOUT = Math.max(10000, Number(process.env.DEPLOY_SSH_TIMEOUT || 60000))
+const SSH_RETRIES = Math.max(1, Number(process.env.DEPLOY_SSH_RETRIES || 5))
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const cfg = {
   host: process.env.DEPLOY_SSH_HOST,
@@ -110,7 +116,7 @@ function fmtBytes(n) {
   return `${n.toFixed(i ? 1 : 0)} ${u[i]}`
 }
 
-function connect() {
+function connectOnce() {
   return new Promise((resolve, reject) => {
     const conn = new Client()
     conn
@@ -122,9 +128,30 @@ function connect() {
         username: cfg.username,
         privateKey,
         passphrase: cfg.passphrase,
-        readyTimeout: 20000,
+        readyTimeout: SSH_READY_TIMEOUT,
+        keepaliveInterval: 15000,
+        keepaliveCountMax: 4,
       })
   })
+}
+
+async function connect(label = '') {
+  let lastErr
+  for (let attempt = 1; attempt <= SSH_RETRIES; attempt++) {
+    try {
+      return await connectOnce()
+    } catch (e) {
+      lastErr = e
+      if (attempt < SSH_RETRIES) {
+        const wait = attempt * 2000
+        console.error(
+          `\n${C.yellow}SSH${label} ${attempt}/${SSH_RETRIES}: ${e.message}. Повтор через ${wait / 1000}s…${C.reset}`,
+        )
+        await sleep(wait)
+      }
+    }
+  }
+  throw lastErr
 }
 
 function getSftp(conn) {
@@ -153,14 +180,28 @@ function exec(conn, cmd) {
   })
 }
 
-function sftpMkdir(sftp, p) {
-  return new Promise((resolve) => sftp.mkdir(p, () => resolve()))
+function shellQuote(s) {
+  return `'${s.replace(/'/g, `'\\''`)}'`
 }
 
 function sftpPut(sftp, local, remote) {
   return new Promise((resolve, reject) => {
     sftp.fastPut(local, remote, (err) => (err ? reject(err) : resolve()))
   })
+}
+
+async function sftpPutRetry(sftp, local, remote) {
+  let lastErr
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await sftpPut(sftp, local, remote)
+      return
+    } catch (e) {
+      lastErr = e
+      if (attempt < 3) await sleep(attempt * 1000)
+    }
+  }
+  throw lastErr
 }
 
 /** Один find на сервере вместо тысяч stat по SFTP. */
@@ -199,10 +240,16 @@ function collectRemoteDirs(files) {
   return [...dirs].sort((a, b) => a.split('/').length - b.split('/').length)
 }
 
-async function ensureAllDirs(sftp, dirs) {
-  for (const d of dirs) {
-    await sftpMkdir(sftp, d)
+/** mkdir -p пачками по SSH — быстрее тысяч SFTP-mkdir. */
+async function ensureAllDirs(conn, dirs) {
+  const chunk = 400
+  for (let i = 0; i < dirs.length; i += chunk) {
+    const batch = dirs.slice(i, i + chunk)
+    const cmd = batch.map((d) => `mkdir -p ${shellQuote(d)}`).join(' ')
+    await exec(conn, cmd)
+    process.stdout.write(`\rСоздаю каталоги… ${Math.min(i + batch.length, dirs.length)}/${dirs.length}`)
   }
+  process.stdout.write('\n')
 }
 
 function makeProgress(totalBytes) {
@@ -324,9 +371,11 @@ async function main() {
     return
   }
 
+  const remoteDirs = collectRemoteDirs(toUpload)
+  console.log(`Создаю каталоги (${remoteDirs.length})…`)
+  await ensureAllDirs(mainConn, remoteDirs)
+
   const sftpMain = await getSftp(mainConn)
-  console.log('Создаю каталоги…')
-  await ensureAllDirs(sftpMain, collectRemoteDirs(toUpload))
 
   const progress = makeProgress(totalBytes)
   progress.add(skippedBytes, `${C.dim}skip${C.reset}`)
@@ -336,16 +385,24 @@ async function main() {
   let uploadError = null
 
   async function worker(workerId) {
-    const conn = workerId === 0 ? mainConn : await connect()
-    const sftp = workerId === 0 ? sftpMain : await getSftp(conn)
+    let conn
+    let sftp
     try {
+      if (workerId === 0) {
+        conn = mainConn
+        sftp = sftpMain
+      } else {
+        await sleep(workerId * 1000)
+        conn = await connect(` #${workerId}`)
+        sftp = await getSftp(conn)
+      }
       while (true) {
         const i = nextIdx++
         if (i >= toUpload.length) break
         const f = toUpload[i]
         const remote = `${cfg.remoteDir}/${f.rel}`
         progress.tick(f.rel)
-        await sftpPut(sftp, f.local, remote)
+        await sftpPutRetry(sftp, f.local, remote)
         uploaded++
         progress.add(f.size)
         progress.tick(f.rel)
@@ -353,7 +410,7 @@ async function main() {
     } catch (e) {
       uploadError = e
     } finally {
-      if (workerId !== 0) conn.end()
+      if (workerId !== 0 && conn) conn.end()
     }
   }
 

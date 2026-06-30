@@ -79,16 +79,19 @@ export default async function NewsListPage({ searchParams }: { searchParams: Sea
           Новостей пока нет.
         </div>
       ) : (
-        <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="flex flex-wrap justify-center gap-5">
           {result.docs.map((item) => {
             const { src, alt } = resolveNewsCover(item as unknown as NewsLike)
             return (
-              <li key={String(item.id)}>
+              <li
+                key={String(item.id)}
+                className="w-full sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.834rem)]"
+              >
                 <Link
                   href={`/news/${item.slug}`}
-                  className="group block overflow-hidden rounded-xl border border-stone-200 bg-white shadow-[0_2px_14px_-6px_rgba(28,25,23,0.12)] transition-all hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-[0_8px_24px_-12px_rgba(28,25,23,0.2)]"
+                  className="group flex h-full flex-col overflow-hidden rounded-xl border border-stone-200 bg-white shadow-[0_2px_14px_-6px_rgba(28,25,23,0.12)] transition-all hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-[0_8px_24px_-12px_rgba(28,25,23,0.2)]"
                 >
-                  <div className="relative aspect-[4/3] w-full bg-stone-100">
+                  <div className="relative aspect-[4/3] w-full shrink-0 bg-stone-100">
                     {src ? (
                       <Image
                         src={src}
@@ -97,13 +100,17 @@ export default async function NewsListPage({ searchParams }: { searchParams: Sea
                         className="object-cover"
                         unoptimized
                       />
-                    ) : null}
+                    ) : (
+                      <div className="flex h-full items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200/80">
+                        <span className="text-sm font-medium text-stone-400">Новости</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="space-y-2 p-4">
+                  <div className="flex flex-1 flex-col space-y-2 p-4">
                     <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
                       {toDateLabel(item.publishedAt)}
                     </p>
-                    <h2 className="line-clamp-3 text-base font-semibold text-stone-900 group-hover:text-stone-700">
+                    <h2 className="line-clamp-2 min-h-12 text-base font-semibold leading-normal text-stone-900 group-hover:text-stone-700">
                       {item.title}
                     </h2>
                     <span className="inline-flex text-sm font-medium text-stone-700">Открыть новость</span>

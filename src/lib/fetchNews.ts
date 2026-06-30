@@ -2,7 +2,7 @@ import { getPayload } from 'payload'
 
 import configPromise from '@payload-config'
 
-const NEWS_PER_PAGE = 20
+const NEWS_PER_PAGE = 18
 
 export async function fetchNewsPage(page: number, draft: boolean) {
   const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1
