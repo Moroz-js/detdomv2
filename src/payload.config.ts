@@ -34,6 +34,10 @@ export default buildConfig({
       scriptPath: path.resolve(dirname, 'scripts/import-content-bin.ts'),
     },
     {
+      key: 'import-news',
+      scriptPath: path.resolve(dirname, 'scripts/import-news-bin.ts'),
+    },
+    {
       key: 'patch-security-page',
       scriptPath: path.resolve(dirname, 'scripts/patch-security-page-bin.ts'),
     },

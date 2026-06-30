@@ -13,6 +13,11 @@
     "migrate:create": "payload migrate:create --disable-transpile",
     "purge-content": "payload purge-content --disable-transpile",
     "import-content": "payload import-content --disable-transpile",
+    "import-news": "payload import-news --disable-transpile",
+    "import-news:update": "payload import-news --disable-transpile -- --update",
+    "parse:wp": "node src/scripts/parse-wp-xml.mjs",
+    "parse:wp:news": "node src/scripts/parse-wp-xml.mjs --only-new --only-news",
+    "deploy:media": "node deploy/upload-media.mjs",
     "patch-security-page": "payload patch-security-page --disable-transpile"
   },
   "dependencies": {
@@ -34,6 +39,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
+    "ssh2": "^1.17.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

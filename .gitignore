@@ -32,9 +32,17 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+!deploy/.env.deploy.example
 
 # локальный кластер PostgreSQL (initdb в .pgdata)
 /.pgdata/
+
+# дампы Neon / PostgreSQL (не коммитить — содержат данные и секреты)
+/backups/
+
+# Payload uploads (на сервере и при миграции — отдельно от git)
+/media/
 
 # vercel
 .vercel
@@ -42,7 +50,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-scripts/
-old/
--.WordPress.2026-05-26.xml
-content-map.md
