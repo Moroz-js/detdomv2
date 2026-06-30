@@ -191,6 +191,7 @@ chmod 600 "${APP_DIR}/.env"
 
 # ---------- 11. Зависимости и миграции (сборка — в самом конце) ----------
 log "npm ci && migrate"
+rm -rf "${APP_DIR}/node_modules"   # чистим возможные остатки с прошлых запусков
 chown -R "$DEPLOY_USER:$DEPLOY_USER" "$APP_DIR"
 sudo -u "$DEPLOY_USER" bash -lc "cd '${APP_DIR}' && npm ci && npm run migrate" </dev/null
 
