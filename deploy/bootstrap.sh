@@ -64,6 +64,10 @@ ask PREVIEW_SECRET      "PREVIEW_SECRET (Enter — сгенерировать)" 
 [ -z "$PAYLOAD_SECRET" ] && PAYLOAD_SECRET="$(openssl rand -hex 32)"
 [ -z "$PREVIEW_SECRET" ] && PREVIEW_SECRET="$(openssl rand -hex 32)"
 
+# Домен для nginx/SSL берём из адреса сайта (без схемы/порта/пути)
+DOMAIN="$(printf '%s' "$NEXT_PUBLIC_SITE_URL" | sed -E 's#^https?://##; s#/.*$##; s#:.*$##')"
+ask ADMIN_EMAIL "Email для Let's Encrypt" "admin@${DOMAIN}"
+
 LOCAL_DB_URL="postgresql://${DB_USER}:${DB_PASSWORD}@localhost:5432/${DB_NAME}"
 
 # ---------- 1. Пакеты ----------
@@ -169,6 +173,7 @@ DATABASE_URL=${LOCAL_DB_URL}
 PAYLOAD_SECRET=${PAYLOAD_SECRET}
 PREVIEW_SECRET=${PREVIEW_SECRET}
 NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+ADMIN_EMAIL=${ADMIN_EMAIL}
 PORT=3000
 EOF
 chown "$DEPLOY_USER:$DEPLOY_USER" "${APP_DIR}/.env"
@@ -201,24 +206,29 @@ systemctl daemon-reload
 systemctl enable --now detdom
 systemctl restart detdom
 
-# CI должен иметь право перезапускать сервис без пароля
-echo "${DEPLOY_USER} ALL=(root) NOPASSWD: /usr/bin/systemctl restart detdom, /usr/bin/systemctl status detdom" \
+# CI должен иметь право перезапускать сервис и менять домен без пароля
+echo "${DEPLOY_USER} ALL=(root) NOPASSWD: /usr/bin/systemctl restart detdom, /usr/bin/systemctl status detdom, /usr/bin/bash ${APP_DIR}/deploy/setup-domain.sh *" \
   > /etc/sudoers.d/detdom
 chmod 440 /etc/sudoers.d/detdom
 
-# ---------- 13. Firewall ----------
+# ---------- 13. nginx + SSL ----------
+log "nginx + SSL для ${DOMAIN}"
+apt-get install -y nginx certbot python3-certbot-nginx
+bash "${APP_DIR}/deploy/setup-domain.sh" "$DOMAIN" "$ADMIN_EMAIL"
+
+# ---------- 14. Firewall ----------
 ufw allow OpenSSH >/dev/null 2>&1 || true
+ufw allow 'Nginx Full' >/dev/null 2>&1 || true
 yes | ufw enable >/dev/null 2>&1 || true
 
 # ---------- Готово ----------
 echo -e "\n\033[1;32mГотово.\033[0m\n"
 cat <<EOF
-Приложение слушает 127.0.0.1:3000 (nginx настрой сам и проксируй на него + раздачу /media).
+Сайт:     https://${DOMAIN}
+Сервис:   sudo systemctl status detdom
+Логи:     sudo journalctl -u detdom -f
 
 Сгенерированные секреты (сохрани!):
   PAYLOAD_SECRET=${PAYLOAD_SECRET}
   PREVIEW_SECRET=${PREVIEW_SECRET}
-
-Сервис:   sudo systemctl status detdom
-Логи:     sudo journalctl -u detdom -f
 EOF

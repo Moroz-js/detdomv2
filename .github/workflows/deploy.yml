@@ -24,7 +24,7 @@ jobs:
           envs: SITE_URL
           script: |
             set -euo pipefail
-            SITE_URL="${{ secrets.NEXT_PUBLIC_SITE_URL }}"
+            SITE_URL="${{ vars.NEXT_PUBLIC_SITE_URL || secrets.NEXT_PUBLIC_SITE_URL }}"
             cd /var/www/detdom
 
             echo "==> Подтягиваю код"
@@ -46,6 +46,16 @@ jobs:
 
             echo "==> Сборка"
             npm run build
+
+            echo "==> Проверка домена (nginx + SSL)"
+            DOMAIN="$(printf '%s' "$SITE_URL" | sed -E 's#^https?://##; s#/.*$##; s#:.*$##')"
+            PREV_DOMAIN="$(cat /var/www/detdom/.deployed_domain 2>/dev/null || true)"
+            if [ -n "$DOMAIN" ] && [ "$DOMAIN" != "$PREV_DOMAIN" ]; then
+              echo "Домен изменился: '${PREV_DOMAIN}' -> '${DOMAIN}', перенастраиваю nginx + SSL"
+              sudo /usr/bin/bash /var/www/detdom/deploy/setup-domain.sh "$DOMAIN"
+            else
+              echo "Домен не менялся ($DOMAIN) — пропускаю."
+            fi
 
             echo "==> Перезапуск сервиса"
             sudo /usr/bin/systemctl restart detdom
