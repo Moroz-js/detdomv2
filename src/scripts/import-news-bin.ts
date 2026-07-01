@@ -28,14 +28,19 @@ type NewsDoc = {
 export async function script(config: Promise<SanitizedConfig> | SanitizedConfig): Promise<void> {
   const payload = await getPayload({ config })
   const allowUpdate = process.argv.includes('--update')
+  const fileFlag = process.argv.indexOf('--file')
+  const jsonFile =
+    fileFlag !== -1 && process.argv[fileFlag + 1]
+      ? process.argv[fileFlag + 1]
+      : 'news.json'
 
   try {
     let created = 0
     let updated = 0
     let skipped = 0
 
-    console.log('Импорт новостей…')
-    const news = readJson<NewsDoc[]>('news.json')
+    console.log(`Импорт новостей из ${jsonFile}…`)
+    const news = readJson<NewsDoc[]>(jsonFile)
     for (const item of news) {
       const { docs } = await payload.find({
         collection: 'news',

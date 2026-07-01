@@ -93,6 +93,32 @@ export const ImageBlock: Block = {
     { name: 'imageUrl', type: 'text', label: 'Изображение (URL)' },
     { name: 'alt', type: 'text', label: 'Alt-текст' },
     { name: 'caption', type: 'text', label: 'Подпись' },
+    {
+      name: 'width',
+      type: 'select',
+      label: 'Ширина',
+      defaultValue: 'auto',
+      options: [
+        { label: 'Авто', value: 'auto' },
+        { label: '1/3', value: '1/3' },
+        { label: '1/2', value: '1/2' },
+        { label: '2/3', value: '2/3' },
+        { label: 'Полная', value: 'full' },
+      ],
+    },
+    {
+      name: 'maxHeight',
+      type: 'select',
+      label: 'Макс. высота',
+      defaultValue: 'md',
+      options: [
+        { label: 'Маленькая (320px)', value: 'sm' },
+        { label: 'Средняя (480px)', value: 'md' },
+        { label: 'Большая (640px)', value: 'lg' },
+        { label: 'Очень большая (800px)', value: 'xl' },
+        { label: 'Без ограничений', value: 'none' },
+      ],
+    },
   ],
 }
 

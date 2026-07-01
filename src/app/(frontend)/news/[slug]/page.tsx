@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import type { Metadata } from 'next'
 import { draftMode } from 'next/headers'
@@ -8,6 +7,7 @@ import type { SerializedEditorState } from 'lexical'
 
 import { fetchNewsBySlug } from '@/lib/fetchNews'
 import { mediaSrc } from '@/lib/media'
+import { NewsGallery } from '@/components/NewsGallery'
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -82,36 +82,11 @@ export default async function NewsItemPage({ params }: Props) {
         <h1 className="text-3xl font-semibold tracking-tight text-stone-900 md:text-4xl">{news.title}</h1>
       </div>
 
-      {(() => {
-        const gallery = collectGallery(news as unknown as Parameters<typeof collectGallery>[0])
-        if (!gallery.length) return null
-        const [cover, ...rest] = gallery
-        return (
-          <section className="space-y-4">
-            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-stone-200 bg-stone-100">
-              <Image src={cover.src} alt={cover.alt} fill className="object-cover" unoptimized />
-            </div>
-            {rest.length ? (
-              <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                {rest.map((item, idx) => (
-                  <li
-                    key={`${news.id}-img-${idx}`}
-                    className="relative aspect-[4/3] overflow-hidden rounded-lg border border-stone-200 bg-stone-100"
-                  >
-                    <Image
-                      src={item.src}
-                      alt={item.alt || `${news.title} — фото ${idx + 2}`}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </section>
-        )
-      })()}
+      <NewsGallery
+        newsId={news.id}
+        newsTitle={news.title}
+        gallery={collectGallery(news as unknown as Parameters<typeof collectGallery>[0])}
+      />
 
       {news.content ? (
         <section className="prose prose-stone max-w-none prose-headings:text-stone-900 prose-p:text-stone-700 prose-a:text-stone-900">

@@ -3,8 +3,8 @@
  *
  *   node src/scripts/parse-wp-xml.mjs [news.xml] [--attachments baseline.xml] [--only-new] [--only-news]
  *
- * news.xml по умолчанию: -.WordPress.2026-06-29.xml
- * baseline.xml по умолчанию: -.WordPress.2026-05-26.xml (вложения + diff для --only-new)
+ * news.xml по умолчанию: -.WordPress.2026-06-30.xml
+ * baseline.xml по умолчанию: -.WordPress.2026-06-29.xml (вложения + diff для --only-new)
  */
 
 import fs from 'node:fs'
@@ -26,10 +26,10 @@ const attachmentsFlagIdx = argv.indexOf('--attachments')
 const attachmentsPathArg =
   attachmentsFlagIdx !== -1 ? argv[attachmentsFlagIdx + 1] : null
 
-const NEWS_XML = path.resolve(ROOT, positional[0] || '-.WordPress.2026-06-29.xml')
+const NEWS_XML = path.resolve(ROOT, positional[0] || '-.WordPress.2026-06-30.xml')
 const ATTACHMENTS_XML = path.resolve(
   ROOT,
-  attachmentsPathArg || positional[1] || '-.WordPress.2026-05-26.xml',
+  attachmentsPathArg || positional[1] || '-.WordPress.2026-06-29.xml',
 )
 const ONLY_NEW = flags.has('--only-new')
 const ONLY_NEWS = flags.has('--only-news')

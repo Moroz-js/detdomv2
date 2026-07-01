@@ -21,7 +21,7 @@ type ContainerProps = HTMLAttributes<HTMLDivElement> & {
 export function Container({ children, className, columns, ...props }: ContainerProps) {
   return (
     <div
-      className={cn('mx-auto w-full max-w-5xl px-4', columns ? columnsClassNames[columns] : '', className)}
+      className={cn('mx-auto w-full max-w-[1440px] px-6', columns ? columnsClassNames[columns] : '', className)}
       {...props}
     >
       {children}

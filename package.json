@@ -17,6 +17,7 @@
     "import-news:update": "payload import-news --disable-transpile -- --update",
     "parse:wp": "node src/scripts/parse-wp-xml.mjs",
     "parse:wp:news": "node src/scripts/parse-wp-xml.mjs --only-new --only-news",
+    "download:news-media": "node src/scripts/download-news-media.mjs",
     "deploy:media": "node deploy/upload-media.mjs",
     "patch-security-page": "payload patch-security-page --disable-transpile"
   },

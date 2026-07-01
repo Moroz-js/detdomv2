@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import type { SerializedEditorState } from 'lexical'
@@ -6,8 +5,10 @@ import { getPayload } from 'payload'
 
 import configPromise from '@payload-config'
 import { FormTabsBlock, type FormType } from '@/components/FormTabsBlock'
+import { GalleryGrid } from '@/components/GalleryGrid'
 import { GosuslugiBanner, isGosuslugiCta } from '@/components/GosuslugiBanner'
 import { ImageSlider, type SliderSlide } from '@/components/ImageSlider'
+import { ImageWithLightbox } from '@/components/ImageWithLightbox'
 import { mediaSrc } from '@/lib/media'
 import { cn } from '@/lib/utils'
 
@@ -278,22 +279,36 @@ async function renderBlock(
     }
     case 'image': {
       const { src, alt } = resolveImageSrc(block, 'media')
+      if (!src) return null
+
+      const widthVal = pickStr(block.width) ?? 'auto'
+      const maxHeightVal = pickStr(block.maxHeight) ?? 'md'
+
+      const widthClass: Record<string, string> = {
+        auto: '',
+        '1/3': 'w-1/3',
+        '1/2': 'w-1/2',
+        '2/3': 'w-2/3',
+        full: 'w-full',
+      }
+
+      const maxHeightClass: Record<string, string> = {
+        sm: 'max-h-80',
+        md: 'max-h-[480px]',
+        lg: 'max-h-[640px]',
+        xl: 'max-h-[800px]',
+        none: 'max-h-none',
+      }
+
       return (
-        <figure key={key} className="space-y-2">
-          {src ? (
-            <Image
-              alt={alt || pickStr(block.caption) || 'Изображение'}
-              className="max-h-[480px] w-auto max-w-full rounded-lg border border-zinc-200 object-contain shadow-sm"
-              height={480}
-              src={src}
-              unoptimized
-              width={800}
-            />
-          ) : null}
-          {block.caption ? (
-            <figcaption className="text-sm text-zinc-600">{String(block.caption)}</figcaption>
-          ) : null}
-        </figure>
+        <ImageWithLightbox
+          key={key}
+          src={src}
+          alt={alt || pickStr(block.caption) || 'Изображение'}
+          caption={pickStr(block.caption)}
+          widthClass={widthClass[widthVal] ?? ''}
+          maxHeightClass={maxHeightClass[maxHeightVal] ?? 'max-h-[480px]'}
+        />
       )
     }
     case 'formTabs':
@@ -417,30 +432,7 @@ async function renderBlock(
           {title ? (
             <h2 className="text-2xl font-semibold tracking-tight text-stone-900">{title}</h2>
           ) : null}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {images.map((img, i) =>
-              img.src ? (
-                <figure
-                  key={`${key}-g-${i}`}
-                  className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm"
-                >
-                  <Image
-                    alt={img.alt || 'Изображение'}
-                    className="aspect-[3/4] w-full object-contain"
-                    height={400}
-                    src={img.src}
-                    unoptimized
-                    width={300}
-                  />
-                  {img.caption && source !== 'achievements' ? (
-                    <figcaption className="border-t border-stone-100 px-2 py-1 text-center text-xs text-stone-600">
-                      {img.caption}
-                    </figcaption>
-                  ) : null}
-                </figure>
-              ) : null,
-            )}
-          </div>
+          <GalleryGrid images={images} withCaptions={source !== 'achievements'} />
         </section>
       )
     }
