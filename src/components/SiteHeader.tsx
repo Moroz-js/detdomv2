@@ -55,7 +55,7 @@ function CloseMenuIcon() {
   )
 }
 
-const headerShell = 'mx-auto w-full max-w-5xl px-4'
+const headerShell = 'mx-auto w-full max-w-[1440px] px-6'
 const headerBarClass = `${headerShell} flex items-center justify-between gap-3`
 
 const SOCIAL = [

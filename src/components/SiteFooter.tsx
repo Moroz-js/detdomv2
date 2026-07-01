@@ -72,7 +72,7 @@ export function SiteFooter({
     <>
       <footer className="mt-auto bg-[#1a1a1a] text-white">
         <div className="h-2 w-full shrink-0 bg-teal-500" aria-hidden />
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <div className="mx-auto max-w-[1440px] px-6 py-8 lg:py-10">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-10 xl:gap-12">
             <section>
               <h2 className="mb-3 text-sm font-bold tracking-tight text-white">{navTitle}</h2>
