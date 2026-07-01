@@ -47,7 +47,7 @@ export function Lightbox({ images, index, onClose, onPrev, onNext }: Props) {
       role="dialog"
       aria-modal
       aria-label="Просмотр изображения"
-      onClick={onClose}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       {/* Закрыть */}
       <button
@@ -72,10 +72,7 @@ export function Lightbox({ images, index, onClose, onPrev, onNext }: Props) {
       )}
 
       {/* Изображение */}
-      <div
-        className="relative flex max-h-[90vh] max-w-[90vw] items-center justify-center"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="relative flex max-h-[90vh] max-w-[90vw] items-center justify-center">
         <Image
           src={current.src}
           alt={current.alt}

@@ -237,7 +237,7 @@ export function ImageSlider({ slides, variant = 'card', slidesPerView = 3 }: Ima
           role="dialog"
           aria-modal
           aria-label="Увеличенное изображение"
-          onClick={() => setZoomOpen(false)}
+          onClick={(e) => { if (e.target === e.currentTarget) setZoomOpen(false) }}
         >
           <button
             type="button"
