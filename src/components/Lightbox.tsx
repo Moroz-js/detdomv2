@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect } from 'react'
-import Image from 'next/image'
 
 export type LightboxImage = { src: string; alt: string }
 
@@ -71,17 +70,13 @@ export function Lightbox({ images, index, onClose, onPrev, onNext }: Props) {
         </button>
       )}
 
-      {/* Изображение */}
-      <div className="relative flex max-h-[90vh] max-w-[90vw] items-center justify-center">
-        <Image
-          src={current.src}
-          alt={current.alt}
-          width={1600}
-          height={900}
-          className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
-          unoptimized
-        />
-      </div>
+      {/* Изображение — plain img чтобы не резервировать лишнее место */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={current.src}
+        alt={current.alt}
+        className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
+      />
 
       {/* Вперёд */}
       {hasMany && (

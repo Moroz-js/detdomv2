@@ -281,20 +281,15 @@ export function ImageSlider({ slides, variant = 'card', slidesPerView = 3 }: Ima
             </>
           ) : null}
 
-          <div
-            className="relative max-h-[90vh] max-w-[min(100%,72rem)]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Image
+          <div className="flex flex-col items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               alt={zoomSlide.alt}
-              className="max-h-[90vh] w-auto max-w-full object-contain"
-              height={1200}
+              className="max-h-[90vh] max-w-[min(90vw,72rem)] rounded-lg object-contain shadow-2xl"
               src={zoomSlide.src}
-              unoptimized
-              width={1600}
             />
             {count > 1 ? (
-              <p className="mt-3 text-center text-sm text-white/80 tabular-nums">
+              <p className="text-center text-sm text-white/80 tabular-nums">
                 {zoomIndex + 1} / {count}
               </p>
             ) : null}
