@@ -85,6 +85,22 @@ export const ContentBlock: Block = {
   ],
 }
 
+const MEDIA_WIDTH_OPTIONS = [
+  { label: 'Авто', value: 'auto' },
+  { label: '1/3', value: '1/3' },
+  { label: '1/2', value: '1/2' },
+  { label: '2/3', value: '2/3' },
+  { label: 'Полная', value: 'full' },
+]
+
+const MEDIA_MAX_HEIGHT_OPTIONS = [
+  { label: 'Маленькая (320px)', value: 'sm' },
+  { label: 'Средняя (480px)', value: 'md' },
+  { label: 'Большая (640px)', value: 'lg' },
+  { label: 'Очень большая (800px)', value: 'xl' },
+  { label: 'Без ограничений', value: 'none' },
+]
+
 export const ImageBlock: Block = {
   slug: 'image',
   labels: { singular: 'Изображение', plural: 'Изображения' },
@@ -98,26 +114,60 @@ export const ImageBlock: Block = {
       type: 'select',
       label: 'Ширина',
       defaultValue: 'auto',
-      options: [
-        { label: 'Авто', value: 'auto' },
-        { label: '1/3', value: '1/3' },
-        { label: '1/2', value: '1/2' },
-        { label: '2/3', value: '2/3' },
-        { label: 'Полная', value: 'full' },
-      ],
+      options: MEDIA_WIDTH_OPTIONS,
     },
     {
       name: 'maxHeight',
       type: 'select',
       label: 'Макс. высота',
       defaultValue: 'md',
-      options: [
-        { label: 'Маленькая (320px)', value: 'sm' },
-        { label: 'Средняя (480px)', value: 'md' },
-        { label: 'Большая (640px)', value: 'lg' },
-        { label: 'Очень большая (800px)', value: 'xl' },
-        { label: 'Без ограничений', value: 'none' },
-      ],
+      options: MEDIA_MAX_HEIGHT_OPTIONS,
+    },
+  ],
+}
+
+export const VideoBlock: Block = {
+  slug: 'video',
+  labels: { singular: 'Видео', plural: 'Видео' },
+  fields: [
+    {
+      name: 'media',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Видео (upload)',
+      admin: { description: 'MP4 / WebM. Если задан — используется upload; иначе URL ниже.' },
+    },
+    {
+      name: 'videoUrl',
+      type: 'text',
+      label: 'Видео (URL)',
+      admin: { description: 'Прямой URL к файлу (например /media/…/clip.mp4).' },
+    },
+    {
+      name: 'poster',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Превью (upload)',
+    },
+    {
+      name: 'posterUrl',
+      type: 'text',
+      label: 'Превью (URL)',
+    },
+    { name: 'caption', type: 'text', label: 'Подпись' },
+    {
+      name: 'width',
+      type: 'select',
+      label: 'Ширина',
+      defaultValue: 'full',
+      options: MEDIA_WIDTH_OPTIONS,
+    },
+    {
+      name: 'maxHeight',
+      type: 'select',
+      label: 'Макс. высота',
+      defaultValue: 'md',
+      options: MEDIA_MAX_HEIGHT_OPTIONS,
     },
   ],
 }
@@ -284,6 +334,7 @@ const contentColumnBlocks: Block[] = [
   SliderBlock,
   ContentBlock,
   ImageBlock,
+  VideoBlock,
   FormTabsBlock,
   HeadingBlock,
   FileListBlock,
@@ -374,6 +425,7 @@ export const pageBlocks: Block[] = [
   SliderBlock,
   ContentBlock,
   ImageBlock,
+  VideoBlock,
   FormTabsBlock,
   HeadingBlock,
   FileListBlock,

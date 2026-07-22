@@ -10,8 +10,25 @@ import { GalleryGrid } from '@/components/GalleryGrid'
 import { GosuslugiBanner, isGosuslugiCta } from '@/components/GosuslugiBanner'
 import { ImageSlider, type SliderSlide } from '@/components/ImageSlider'
 import { ImageWithLightbox } from '@/components/ImageWithLightbox'
+import { VideoBlock } from '@/components/VideoBlock'
 import { mediaSrc } from '@/lib/media'
 import { cn } from '@/lib/utils'
+
+const MEDIA_WIDTH_CLASS: Record<string, string> = {
+  auto: '',
+  '1/3': 'w-1/3',
+  '1/2': 'w-1/2',
+  '2/3': 'w-2/3',
+  full: 'w-full',
+}
+
+const MEDIA_MAX_HEIGHT_CLASS: Record<string, string> = {
+  sm: 'max-h-80',
+  md: 'max-h-[480px]',
+  lg: 'max-h-[640px]',
+  xl: 'max-h-[800px]',
+  none: 'max-h-none',
+}
 
 type MediaRef = {
   id?: string | number
@@ -68,6 +85,17 @@ function resolveFileHref(item: Record<string, unknown>): string {
   if (direct) return mediaSrc(direct)
   const file = item.file as MediaRef
   return mediaSrc(file?.url)
+}
+
+function resolveMediaUrl(
+  block: Record<string, unknown>,
+  uploadField: string,
+  urlField: string,
+): string {
+  const directUrl = pickStr(block[urlField])
+  if (directUrl) return mediaSrc(directUrl)
+  const upload = block[uploadField] as MediaRef
+  return mediaSrc(upload?.url)
 }
 
 function containerColumnsClass(columns: string) {
@@ -285,30 +313,33 @@ async function renderBlock(
       const widthVal = pickStr(block.width) ?? 'auto'
       const maxHeightVal = pickStr(block.maxHeight) ?? 'md'
 
-      const widthClass: Record<string, string> = {
-        auto: '',
-        '1/3': 'w-1/3',
-        '1/2': 'w-1/2',
-        '2/3': 'w-2/3',
-        full: 'w-full',
-      }
-
-      const maxHeightClass: Record<string, string> = {
-        sm: 'max-h-80',
-        md: 'max-h-[480px]',
-        lg: 'max-h-[640px]',
-        xl: 'max-h-[800px]',
-        none: 'max-h-none',
-      }
-
       return (
         <ImageWithLightbox
           key={key}
           src={src}
           alt={alt || pickStr(block.caption) || 'Изображение'}
           caption={pickStr(block.caption)}
-          widthClass={widthClass[widthVal] ?? ''}
-          maxHeightClass={maxHeightClass[maxHeightVal] ?? 'max-h-[480px]'}
+          widthClass={MEDIA_WIDTH_CLASS[widthVal] ?? ''}
+          maxHeightClass={MEDIA_MAX_HEIGHT_CLASS[maxHeightVal] ?? 'max-h-[480px]'}
+        />
+      )
+    }
+    case 'video': {
+      const src = resolveMediaUrl(block, 'media', 'videoUrl')
+      if (!src) return null
+
+      const poster = resolveMediaUrl(block, 'poster', 'posterUrl') || null
+      const widthVal = pickStr(block.width) ?? 'full'
+      const maxHeightVal = pickStr(block.maxHeight) ?? 'md'
+
+      return (
+        <VideoBlock
+          key={key}
+          src={src}
+          poster={poster}
+          caption={pickStr(block.caption)}
+          widthClass={MEDIA_WIDTH_CLASS[widthVal] ?? 'w-full'}
+          maxHeightClass={MEDIA_MAX_HEIGHT_CLASS[maxHeightVal] ?? 'max-h-[480px]'}
         />
       )
     }

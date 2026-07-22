@@ -268,9 +268,29 @@ export interface Page {
             imageUrl?: string | null;
             alt?: string | null;
             caption?: string | null;
+            width?: ('auto' | '1/3' | '1/2' | '2/3' | 'full') | null;
+            maxHeight?: ('sm' | 'md' | 'lg' | 'xl' | 'none') | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'image';
+          }
+        | {
+            /**
+             * MP4 / WebM. Если задан — используется upload; иначе URL ниже.
+             */
+            media?: (number | null) | Media;
+            /**
+             * Прямой URL к файлу (например /media/…/clip.mp4).
+             */
+            videoUrl?: string | null;
+            poster?: (number | null) | Media;
+            posterUrl?: string | null;
+            caption?: string | null;
+            width?: ('auto' | '1/3' | '1/2' | '2/3' | 'full') | null;
+            maxHeight?: ('sm' | 'md' | 'lg' | 'xl' | 'none') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'video';
           }
         | {
             title: string;
@@ -426,9 +446,29 @@ export interface Page {
                       imageUrl?: string | null;
                       alt?: string | null;
                       caption?: string | null;
+                      width?: ('auto' | '1/3' | '1/2' | '2/3' | 'full') | null;
+                      maxHeight?: ('sm' | 'md' | 'lg' | 'xl' | 'none') | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'image';
+                    }
+                  | {
+                      /**
+                       * MP4 / WebM. Если задан — используется upload; иначе URL ниже.
+                       */
+                      media?: (number | null) | Media;
+                      /**
+                       * Прямой URL к файлу (например /media/…/clip.mp4).
+                       */
+                      videoUrl?: string | null;
+                      poster?: (number | null) | Media;
+                      posterUrl?: string | null;
+                      caption?: string | null;
+                      width?: ('auto' | '1/3' | '1/2' | '2/3' | 'full') | null;
+                      maxHeight?: ('sm' | 'md' | 'lg' | 'xl' | 'none') | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'video';
                     }
                   | {
                       title: string;
@@ -556,9 +596,29 @@ export interface Page {
                       imageUrl?: string | null;
                       alt?: string | null;
                       caption?: string | null;
+                      width?: ('auto' | '1/3' | '1/2' | '2/3' | 'full') | null;
+                      maxHeight?: ('sm' | 'md' | 'lg' | 'xl' | 'none') | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'image';
+                    }
+                  | {
+                      /**
+                       * MP4 / WebM. Если задан — используется upload; иначе URL ниже.
+                       */
+                      media?: (number | null) | Media;
+                      /**
+                       * Прямой URL к файлу (например /media/…/clip.mp4).
+                       */
+                      videoUrl?: string | null;
+                      poster?: (number | null) | Media;
+                      posterUrl?: string | null;
+                      caption?: string | null;
+                      width?: ('auto' | '1/3' | '1/2' | '2/3' | 'full') | null;
+                      maxHeight?: ('sm' | 'md' | 'lg' | 'xl' | 'none') | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'video';
                     }
                   | {
                       title: string;
@@ -686,9 +746,29 @@ export interface Page {
                       imageUrl?: string | null;
                       alt?: string | null;
                       caption?: string | null;
+                      width?: ('auto' | '1/3' | '1/2' | '2/3' | 'full') | null;
+                      maxHeight?: ('sm' | 'md' | 'lg' | 'xl' | 'none') | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'image';
+                    }
+                  | {
+                      /**
+                       * MP4 / WebM. Если задан — используется upload; иначе URL ниже.
+                       */
+                      media?: (number | null) | Media;
+                      /**
+                       * Прямой URL к файлу (например /media/…/clip.mp4).
+                       */
+                      videoUrl?: string | null;
+                      poster?: (number | null) | Media;
+                      posterUrl?: string | null;
+                      caption?: string | null;
+                      width?: ('auto' | '1/3' | '1/2' | '2/3' | 'full') | null;
+                      maxHeight?: ('sm' | 'md' | 'lg' | 'xl' | 'none') | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'video';
                     }
                   | {
                       title: string;
@@ -816,9 +896,29 @@ export interface Page {
                       imageUrl?: string | null;
                       alt?: string | null;
                       caption?: string | null;
+                      width?: ('auto' | '1/3' | '1/2' | '2/3' | 'full') | null;
+                      maxHeight?: ('sm' | 'md' | 'lg' | 'xl' | 'none') | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'image';
+                    }
+                  | {
+                      /**
+                       * MP4 / WebM. Если задан — используется upload; иначе URL ниже.
+                       */
+                      media?: (number | null) | Media;
+                      /**
+                       * Прямой URL к файлу (например /media/…/clip.mp4).
+                       */
+                      videoUrl?: string | null;
+                      poster?: (number | null) | Media;
+                      posterUrl?: string | null;
+                      caption?: string | null;
+                      width?: ('auto' | '1/3' | '1/2' | '2/3' | 'full') | null;
+                      maxHeight?: ('sm' | 'md' | 'lg' | 'xl' | 'none') | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'video';
                     }
                   | {
                       title: string;
@@ -946,9 +1046,29 @@ export interface Page {
                       imageUrl?: string | null;
                       alt?: string | null;
                       caption?: string | null;
+                      width?: ('auto' | '1/3' | '1/2' | '2/3' | 'full') | null;
+                      maxHeight?: ('sm' | 'md' | 'lg' | 'xl' | 'none') | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'image';
+                    }
+                  | {
+                      /**
+                       * MP4 / WebM. Если задан — используется upload; иначе URL ниже.
+                       */
+                      media?: (number | null) | Media;
+                      /**
+                       * Прямой URL к файлу (например /media/…/clip.mp4).
+                       */
+                      videoUrl?: string | null;
+                      poster?: (number | null) | Media;
+                      posterUrl?: string | null;
+                      caption?: string | null;
+                      width?: ('auto' | '1/3' | '1/2' | '2/3' | 'full') | null;
+                      maxHeight?: ('sm' | 'md' | 'lg' | 'xl' | 'none') | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'video';
                     }
                   | {
                       title: string;
@@ -1076,9 +1196,29 @@ export interface Page {
                       imageUrl?: string | null;
                       alt?: string | null;
                       caption?: string | null;
+                      width?: ('auto' | '1/3' | '1/2' | '2/3' | 'full') | null;
+                      maxHeight?: ('sm' | 'md' | 'lg' | 'xl' | 'none') | null;
                       id?: string | null;
                       blockName?: string | null;
                       blockType: 'image';
+                    }
+                  | {
+                      /**
+                       * MP4 / WebM. Если задан — используется upload; иначе URL ниже.
+                       */
+                      media?: (number | null) | Media;
+                      /**
+                       * Прямой URL к файлу (например /media/…/clip.mp4).
+                       */
+                      videoUrl?: string | null;
+                      poster?: (number | null) | Media;
+                      posterUrl?: string | null;
+                      caption?: string | null;
+                      width?: ('auto' | '1/3' | '1/2' | '2/3' | 'full') | null;
+                      maxHeight?: ('sm' | 'md' | 'lg' | 'xl' | 'none') | null;
+                      id?: string | null;
+                      blockName?: string | null;
+                      blockType: 'video';
                     }
                   | {
                       title: string;
@@ -1437,6 +1577,21 @@ export interface PagesSelect<T extends boolean = true> {
               imageUrl?: T;
               alt?: T;
               caption?: T;
+              width?: T;
+              maxHeight?: T;
+              id?: T;
+              blockName?: T;
+            };
+        video?:
+          | T
+          | {
+              media?: T;
+              videoUrl?: T;
+              poster?: T;
+              posterUrl?: T;
+              caption?: T;
+              width?: T;
+              maxHeight?: T;
               id?: T;
               blockName?: T;
             };
@@ -1575,6 +1730,21 @@ export interface PagesSelect<T extends boolean = true> {
                           imageUrl?: T;
                           alt?: T;
                           caption?: T;
+                          width?: T;
+                          maxHeight?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    video?:
+                      | T
+                      | {
+                          media?: T;
+                          videoUrl?: T;
+                          poster?: T;
+                          posterUrl?: T;
+                          caption?: T;
+                          width?: T;
+                          maxHeight?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1683,6 +1853,21 @@ export interface PagesSelect<T extends boolean = true> {
                           imageUrl?: T;
                           alt?: T;
                           caption?: T;
+                          width?: T;
+                          maxHeight?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    video?:
+                      | T
+                      | {
+                          media?: T;
+                          videoUrl?: T;
+                          poster?: T;
+                          posterUrl?: T;
+                          caption?: T;
+                          width?: T;
+                          maxHeight?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1791,6 +1976,21 @@ export interface PagesSelect<T extends boolean = true> {
                           imageUrl?: T;
                           alt?: T;
                           caption?: T;
+                          width?: T;
+                          maxHeight?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    video?:
+                      | T
+                      | {
+                          media?: T;
+                          videoUrl?: T;
+                          poster?: T;
+                          posterUrl?: T;
+                          caption?: T;
+                          width?: T;
+                          maxHeight?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -1899,6 +2099,21 @@ export interface PagesSelect<T extends boolean = true> {
                           imageUrl?: T;
                           alt?: T;
                           caption?: T;
+                          width?: T;
+                          maxHeight?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    video?:
+                      | T
+                      | {
+                          media?: T;
+                          videoUrl?: T;
+                          poster?: T;
+                          posterUrl?: T;
+                          caption?: T;
+                          width?: T;
+                          maxHeight?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -2007,6 +2222,21 @@ export interface PagesSelect<T extends boolean = true> {
                           imageUrl?: T;
                           alt?: T;
                           caption?: T;
+                          width?: T;
+                          maxHeight?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    video?:
+                      | T
+                      | {
+                          media?: T;
+                          videoUrl?: T;
+                          poster?: T;
+                          posterUrl?: T;
+                          caption?: T;
+                          width?: T;
+                          maxHeight?: T;
                           id?: T;
                           blockName?: T;
                         };
@@ -2115,6 +2345,21 @@ export interface PagesSelect<T extends boolean = true> {
                           imageUrl?: T;
                           alt?: T;
                           caption?: T;
+                          width?: T;
+                          maxHeight?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    video?:
+                      | T
+                      | {
+                          media?: T;
+                          videoUrl?: T;
+                          poster?: T;
+                          posterUrl?: T;
+                          caption?: T;
+                          width?: T;
+                          maxHeight?: T;
                           id?: T;
                           blockName?: T;
                         };
